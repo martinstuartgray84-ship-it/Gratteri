@@ -28,7 +28,8 @@ const CATEGORIES = {
   other: { label: "Other gems", emoji: "✨" },
 };
 
-const SITE_URL = "https://martinstuartgray84-ship-it.github.io/Gratteri/";
+// share links follow whichever domain the site is served from (Pages, Vercel, …)
+const SITE_URL = window.location.origin + window.location.pathname;
 
 // ---------- state ----------
 let session = null;
@@ -58,6 +59,14 @@ function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   }[c]));
+}
+
+// escape, then turn bare http(s) URLs into links (bio, tips, comments, …)
+function linkify(s) {
+  return esc(s).replace(/\bhttps?:\/\/[^\s<>"']+/gi, (u) => {
+    const url = u.replace(/[.,!?)]+$/, "");
+    return `<a href="${url}" target="_blank" rel="noopener">${url}</a>${u.slice(url.length)}`;
+  });
 }
 
 const famById = (id) => families.find((f) => f.id === id);
@@ -535,11 +544,11 @@ function renderFamilies() {
         : `🧳 Next visit: ${fmtRange(next.start_date, next.end_date)}`;
     }
     return `<div class="family-card" style="border-top-color:${esc(fam.color)}">
-      ${fam.photo_url ? `<img class="family-photo" src="${esc(fam.photo_url)}" alt="Photo of ${esc(fam.family_name)}" loading="lazy">` : ""}
+      ${fam.photo_url ? `<a href="${esc(fam.photo_url)}" target="_blank" rel="noopener"><img class="family-photo" src="${esc(fam.photo_url)}" alt="Photo of ${esc(fam.family_name)}" loading="lazy"></a>` : ""}
       <h3>${esc(fam.family_name)}</h3>
       ${fam.home_town ? `<div class="home">📍 ${esc(fam.home_town)}</div>` : ""}
       ${fam.members ? `<div class="members">👨‍👩‍👧‍👦 ${esc(fam.members)}</div>` : ""}
-      ${fam.bio ? `<div class="bio">${esc(fam.bio)}</div>` : ""}
+      ${fam.bio ? `<div class="bio">${linkify(fam.bio)}</div>` : ""}
       <div class="next-visit">${esc(nextTxt)}</div>
     </div>`;
   }).join("") || `<p class="muted">No families yet.</p>`;
@@ -565,7 +574,7 @@ function renderEvents() {
       <div class="event-body">
         <h3>${esc(ev.title)}</h3>
         <div class="muted">by ${esc(famName(ev.family_id))}</div>
-        ${ev.description ? `<p>${esc(ev.description)}</p>` : ""}
+        ${ev.description ? `<p>${linkify(ev.description)}</p>` : ""}
         <div class="event-interest">
           ${who.length
             ? `<span class="muted">Interested (${who.length}): ${esc(who.map((f) => f.family_name).join(", "))}</span>`
@@ -586,7 +595,7 @@ function renderEvents() {
           return `<div class="event-comment">
             <span class="dot" style="background:${esc(famColor(c.family_id))}"></span>
             <strong>${esc(famName(c.family_id))}</strong>
-            <span>${esc(c.body)}</span>
+            <span>${linkify(c.body)}</span>
             ${cMine ? `<button class="btn-danger-link" data-comment-id="${c.id}" type="button">×</button>` : ""}
           </div>`;
         }).join("")}
@@ -663,7 +672,7 @@ function renderGuide() {
           <button class="heart-btn ${iHeart ? "hearted" : ""}" data-heart-place="${p.id}" data-hearted="${iHeart}" type="button"
             title="${iHeart ? "We rate this — click to undo" : "We rate this!"}">❤️ ${hearts.length}</button>
         </div>
-        ${p.description ? `<p class="place-desc">${esc(p.description)}</p>` : ""}
+        ${p.description ? `<p class="place-desc">${linkify(p.description)}</p>` : ""}
         <div class="place-links">
           ${p.maps_url && /^https?:\/\//i.test(p.maps_url) ? `<a href="${esc(p.maps_url)}" target="_blank" rel="noopener">📍 Map</a>` : ""}
           ${p.phone ? `<a href="tel:${esc(p.phone)}">📞 ${esc(p.phone)}</a>` : ""}
@@ -674,7 +683,7 @@ function renderGuide() {
             const tMine = myFamily && t.family_id === myFamily.id;
             return `<div class="place-tip">
               <span class="dot" style="background:${esc(famColor(t.family_id))}"></span>
-              <span><strong>${esc(famName(t.family_id))}:</strong> ${esc(t.body)}</span>
+              <span><strong>${esc(famName(t.family_id))}:</strong> ${linkify(t.body)}</span>
               ${tMine ? `<button class="btn-danger-link" data-tip-id="${t.id}" type="button">×</button>` : ""}
             </div>`;
           }).join("")}
@@ -715,7 +724,7 @@ function renderBoard() {
         <span class="muted">${esc(fmtWhen(m.created_at))}</span>
         ${mine ? `<button class="btn-danger-link" data-message-id="${m.id}" type="button">Remove</button>` : ""}
       </div>
-      <p>${esc(m.body)}</p>
+      <p>${linkify(m.body)}</p>
     </div>`;
   }).join("") || `<p class="muted" style="text-align:center">Nothing on the board yet — be the first to post!</p>`;
 }
