@@ -177,7 +177,11 @@ $("auth-form").addEventListener("submit", async (e) => {
       if (error) throw error;
     }
   } catch (err) {
-    setMsg(msg, err.message || "Something went wrong — please try again.", "error");
+    let friendly = err.message || "Something went wrong — please try again.";
+    if (err.code === "over_email_send_rate_limit" || /rate limit/i.test(friendly)) {
+      friendly = "Our signup email service has hit its hourly limit — nothing wrong with your details! Please try again in an hour or so.";
+    }
+    setMsg(msg, friendly, "error");
   } finally {
     $("auth-submit").disabled = false;
   }
