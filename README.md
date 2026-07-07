@@ -28,6 +28,13 @@ showing who's in town and when — plus a "who's here right now" panel.
 The Supabase URL and publishable key at the top of `app.js` are safe to be
 public — all real protection is enforced by row-level security in the database.
 
+One deliberate trade-off to know about: photos (profile photos and the photo
+wall) are stored in *public* storage buckets, so anyone with a photo's direct
+URL can view it without logging in. The URLs contain long random identifiers
+so they can't be guessed, but a shared link works for anyone — same as
+sharing a photo over WhatsApp. All other data (profiles, visits, events,
+notes) is only readable by signed-in members.
+
 ## Features
 
 - ✍️ Sign up / log in with email + password — open signup: anyone with the
