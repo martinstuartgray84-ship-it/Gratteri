@@ -111,6 +111,26 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
   color: var(--ink-soft);
   margin-bottom: 0.9rem;
 }
+input[type="file"] {
+  display: block;
+  margin-top: 0.3rem;
+  max-width: 100%;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+input[type="file"]::file-selector-button {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: var(--sand);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  margin-right: 0.7rem;
+  cursor: pointer;
+}
+input[type="file"]::file-selector-button:hover { background: #E9DCC4; }
 input[type="text"], input[type="email"], input[type="password"], input[type="date"], textarea {
   display: block;
   width: 100%;
@@ -161,6 +181,7 @@ input:focus, textarea:focus { outline: 2px solid var(--terracotta); outline-offs
 }
 .nav-btn:hover { background: var(--sand); }
 .nav-btn.active { background: var(--terracotta); color: var(--white); }
+.nav-icon { display: none; }
 
 /* ---------- Layout ---------- */
 .main { max-width: 1080px; margin: 0 auto; padding: 1.5rem 1.2rem 3rem; }
@@ -225,6 +246,10 @@ input:focus, textarea:focus { outline: 2px solid var(--terracotta); outline-offs
 .chart-row + .chart-row .chart-timeline, .chart-row + .chart-row .chart-name { border-top: 1px solid #F0EADD; }
 
 .chart-name {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background: var(--white);
   flex: 0 0 170px;
   padding: 0.55rem 0.8rem;
   font-size: 0.85rem;
@@ -308,6 +333,7 @@ input:focus, textarea:focus { outline: 2px solid var(--terracotta); outline-offs
 
 /* ---------- Events ---------- */
 .chart-events-row { background: #FBF7EE; }
+.chart-events-row .chart-name { background: #FBF7EE; }
 .chart-events-row .chart-name { color: var(--ink-soft); font-size: 0.78rem; }
 .event-marker {
   position: absolute;
@@ -577,16 +603,55 @@ select {
   z-index: 200;
 }
 
-/* ---------- Mobile ---------- */
+/* ---------- Mobile: bottom tab bar, iOS-friendly sizing ---------- */
 @media (max-width: 640px) {
-  .topbar { padding: 0.6rem 0.8rem; }
+  .topbar { padding: 0.6rem 0.8rem; position: static; }
   .topbar-brand small { display: none; }
-  .topbar-nav { order: 3; width: 100%; justify-content: space-between; gap: 0.15rem; flex-wrap: wrap; }
-  .nav-btn { flex: 1 1 30%; text-align: center; padding: 0.45rem 0.15rem; font-size: 0.82rem; white-space: nowrap; }
+
+  /* iOS-style tab bar pinned to the bottom, clear of the home indicator */
+  .topbar-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    display: flex;
+    gap: 0;
+    background: var(--white);
+    border-top: 1px solid var(--line);
+    padding: 0.35rem 0.15rem calc(0.35rem + env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 10px rgba(51, 48, 43, 0.06);
+  }
+  .nav-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.3rem 0.05rem;
+    font-size: 0.58rem;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .nav-icon { display: block; font-size: 1.35rem; line-height: 1; }
+  .nav-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+  /* keep content and toasts clear of the tab bar */
+  .main { padding: 1rem 0.8rem calc(5.2rem + env(safe-area-inset-bottom)); }
+  .footer { padding-bottom: calc(5.2rem + env(safe-area-inset-bottom)); }
+  .toast { bottom: calc(5.5rem + env(safe-area-inset-bottom)); max-width: 92vw; }
+
+  /* 16px inputs stop iOS Safari zooming the page on focus */
+  input, select, textarea { font-size: 16px !important; }
+  input[type="date"] { min-height: 44px; }
+  .btn { min-height: 44px; }
+  .btn-danger-link { min-height: 34px; padding: 0.35rem 0.6rem; font-size: 0.9rem; }
+  .heart-btn { min-height: 38px; }
+
   .board-form { flex-direction: column; }
   .board-form textarea { width: 100%; }
   .place-form-grid { grid-template-columns: 1fr; }
   .event-actions { flex-direction: row; flex-wrap: wrap; align-items: center; }
-  .main { padding: 1rem 0.8rem 2.5rem; }
-  .chart-name { flex-basis: 120px; }
+  .chart-name { flex-basis: 110px; }
 }
