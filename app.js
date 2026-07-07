@@ -284,6 +284,7 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
 
 // ---------- render: everything ----------
 function renderAll() {
+  renderCheckin();
   renderInTown();
   renderOverlaps();
   renderChart();
@@ -296,6 +297,39 @@ function renderAll() {
   renderMyVisits();
   $("footer-stats").textContent =
     `${families.length} famil${families.length === 1 ? "y" : "ies"} · ${visits.length} visit${visits.length === 1 ? "" : "s"} planned · ${events.length} event${events.length === 1 ? "" : "s"} · ${places.length} place${places.length === 1 ? "" : "s"} in the guide`;
+}
+
+// ---------- render: check-in bar ----------
+let checkinFormOpen = false;
+
+function renderCheckin() {
+  const bar = $("checkin-bar");
+  if (!myFamily) { bar.innerHTML = ""; return; }
+  const today = todayStr();
+  const current = visits
+    .filter((v) => v.family_id === myFamily.id && v.start_date <= today && v.end_date >= today)
+    .sort((a, b) => b.end_date.localeCompare(a.end_date))[0];
+
+  if (current) {
+    checkinFormOpen = false;
+    bar.innerHTML = current.end_date === today
+      ? `<span>🏡 You're checked in — leaving today. Safe travels! 👋</span>`
+      : `<span>🏡 You're checked in until <strong>${esc(fmtDate(current.end_date))}</strong></span>
+         <button class="btn btn-ghost" data-checkout-visit="${current.id}" type="button">We're leaving today 👋</button>`;
+    return;
+  }
+
+  if (checkinFormOpen) {
+    const prev = $("checkin-until")?.value || "";
+    bar.innerHTML = `<span>🏡 Welcome! Until when are you staying?</span>
+      <input type="date" id="checkin-until" min="${today}" value="${esc(prev)}">
+      <button class="btn btn-primary" data-checkin-confirm type="button">Check in ✓</button>
+      <button class="btn btn-ghost" data-checkin-cancel type="button">Cancel</button>
+      <span id="checkin-message" class="form-message"></span>`;
+  } else {
+    bar.innerHTML = `<span>📍 Just arrived and didn't plan ahead?</span>
+      <button class="btn btn-primary" data-checkin-open type="button">I'm in Gratteri!</button>`;
+  }
 }
 
 // ---------- render: who's in town ----------
@@ -778,6 +812,33 @@ document.addEventListener("click", async (e) => {
     // best-effort: the row is gone either way, an orphaned file is invisible
     db.storage.from("gallery").remove([btn.dataset.galleryPath]).catch(() => {});
     toast("Photo removed");
+    await safeRefresh();
+    return;
+  }
+
+  if ("checkinOpen" in btn.dataset) { checkinFormOpen = true; renderCheckin(); return; }
+  if ("checkinCancel" in btn.dataset) { checkinFormOpen = false; renderCheckin(); return; }
+  if ("checkinConfirm" in btn.dataset) {
+    if (!myFamily) return;
+    const until = $("checkin-until").value;
+    const msg = $("checkin-message");
+    if (!until) { setMsg(msg, "Pick your leave date first!", "error"); return; }
+    if (until < todayStr()) { setMsg(msg, "Your leave date is in the past.", "error"); return; }
+    const { error } = await db.from("visits").insert({
+      family_id: myFamily.id, start_date: todayStr(), end_date: until, notes: "Checked in 📍",
+    });
+    if (error) { setMsg(msg, error.message, "error"); return; }
+    checkinFormOpen = false;
+    toast("Checked in — benvenuti! 🏡");
+    await safeRefresh();
+    return;
+  }
+  if (btn.dataset.checkoutVisit) {
+    if (!confirm("Set your leave date to today?")) return;
+    const { error } = await db.from("visits")
+      .update({ end_date: todayStr() }).eq("id", btn.dataset.checkoutVisit);
+    if (error) { toast(error.message); return; }
+    toast("Leave date set to today — safe travels! 👋");
     await safeRefresh();
     return;
   }
