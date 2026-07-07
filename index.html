@@ -4,7 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gratteri Ambassadors</title>
-  <meta name="description" content="The shared calendar and community page for the Gratteri ambassadors — foreign homeowners in Gratteri, Sicily.">
+  <meta name="description" content="The shared calendar, guide, and community page for the Gratteri ambassadors — foreign homeowners in Gratteri, Sicily.">
+  <meta name="theme-color" content="#C96F4A">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta property="og:title" content="Gratteri Ambassadors">
+  <meta property="og:description" content="See who's in town, plan events, and share the best of Gratteri, Sicily.">
+  <meta property="og:image" content="https://martinstuartgray84-ship-it.github.io/Gratteri/icons/icon-512.png">
+  <meta property="og:url" content="https://martinstuartgray84-ship-it.github.io/Gratteri/">
+  <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -30,7 +38,7 @@
       <form id="auth-form">
         <div id="signup-fields" class="hidden">
           <label>Family / household name
-            <input type="text" id="auth-family-name" placeholder="e.g. The Gray Family" autocomplete="off">
+            <input type="text" id="auth-family-name" maxlength="120" placeholder="e.g. The Gray Family" autocomplete="off">
           </label>
         </div>
         <label>Email
@@ -60,6 +68,8 @@
         <button class="nav-btn active" data-view="calendar" type="button">Calendar</button>
         <button class="nav-btn" data-view="families" type="button">Ambassadors</button>
         <button class="nav-btn" data-view="events" type="button">Events</button>
+        <button class="nav-btn" data-view="guide" type="button">Guide</button>
+        <button class="nav-btn" data-view="gallery" type="button">Photos</button>
         <button class="nav-btn" data-view="board" type="button">Noticeboard</button>
         <button class="nav-btn" data-view="mine" type="button">My family</button>
       </nav>
@@ -71,6 +81,7 @@
       <!-- ===== Calendar view ===== -->
       <section id="view-calendar" class="view">
         <div id="in-town-panel" class="in-town-panel hidden"></div>
+        <div id="overlap-panel" class="in-town-panel overlap-panel hidden"></div>
 
         <div class="view-head">
           <h2>Visit calendar</h2>
@@ -118,6 +129,61 @@
         <div id="events-list" class="events-list"></div>
       </section>
 
+      <!-- ===== Village Guide view ===== -->
+      <section id="view-guide" class="view hidden">
+        <div class="view-head">
+          <h2>Village guide</h2>
+          <span class="muted">The best of Gratteri, from all of us</span>
+        </div>
+        <div id="guide-filters" class="guide-filters"></div>
+        <div class="panel">
+          <h3>Add a place or tip</h3>
+          <form id="place-form" class="profile-form" style="max-width:none">
+            <div class="place-form-grid">
+              <label>Name *
+                <input type="text" id="plf-name" required maxlength="120" placeholder="e.g. Bar Centrale, Salvatore the plumber…">
+              </label>
+              <label>Category *
+                <select id="plf-category" required></select>
+              </label>
+              <label class="place-form-wide">Why it's good / what to know
+                <textarea id="plf-desc" rows="2" maxlength="1000" placeholder="e.g. Best granita on the square. Closed Mondays."></textarea>
+              </label>
+              <label>Google Maps link <span class="muted">(optional)</span>
+                <input type="url" id="plf-maps" placeholder="https://maps.app.goo.gl/…">
+              </label>
+              <label>Phone <span class="muted">(optional)</span>
+                <input type="text" id="plf-phone" maxlength="40" placeholder="+39 …">
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary">Add to the guide</button>
+            <span id="place-message" class="form-message"></span>
+          </form>
+        </div>
+        <div id="places-list" class="places-list"></div>
+      </section>
+
+      <!-- ===== Photo wall view ===== -->
+      <section id="view-gallery" class="view hidden">
+        <div class="view-head">
+          <h2>Photo wall</h2>
+          <span class="muted">Gratteri through our eyes</span>
+        </div>
+        <div class="panel">
+          <form id="gallery-form" class="visit-form">
+            <label>Photo *
+              <input type="file" id="gf-photo" accept="image/*" required>
+            </label>
+            <label class="visit-note-label">Caption <span class="muted">(optional)</span>
+              <input type="text" id="gf-caption" maxlength="300" placeholder="e.g. Sunset from the belvedere, June 2026">
+            </label>
+            <button type="submit" class="btn btn-primary">Share photo</button>
+          </form>
+          <span id="gallery-message" class="form-message"></span>
+        </div>
+        <div id="gallery-grid" class="gallery-grid"></div>
+      </section>
+
       <!-- ===== Noticeboard view ===== -->
       <section id="view-board" class="view hidden">
         <div class="view-head"><h2>Noticeboard</h2></div>
@@ -140,16 +206,16 @@
           <h3>Our profile</h3>
           <form id="profile-form" class="profile-form">
             <label>Family / household name *
-              <input type="text" id="pf-name" required placeholder="e.g. The Gray Family">
+              <input type="text" id="pf-name" required maxlength="120" placeholder="e.g. The Gray Family">
             </label>
             <label>Who's in the family?
-              <input type="text" id="pf-members" placeholder="e.g. Martin, Sofia, and the two boys">
+              <input type="text" id="pf-members" maxlength="300" placeholder="e.g. Martin, Sofia, and the two boys">
             </label>
             <label>Where are you from?
-              <input type="text" id="pf-hometown" placeholder="e.g. Edinburgh, Scotland">
+              <input type="text" id="pf-hometown" maxlength="120" placeholder="e.g. Edinburgh, Scotland">
             </label>
             <label>A little about you
-              <textarea id="pf-bio" rows="3" placeholder="How you found Gratteri, which house is yours, what you love about the village…"></textarea>
+              <textarea id="pf-bio" rows="3" maxlength="1000" placeholder="How you found Gratteri, which house is yours, what you love about the village…"></textarea>
             </label>
             <label>Family photo <span class="muted">(optional)</span>
               <input type="file" id="pf-photo" accept="image/*">
@@ -173,7 +239,7 @@
               <input type="date" id="vf-end" required>
             </label>
             <label class="visit-note-label">Note <span class="muted">(optional)</span>
-              <input type="text" id="vf-notes" placeholder="e.g. Summer holiday, bringing friends!">
+              <input type="text" id="vf-notes" maxlength="500" placeholder="e.g. Summer holiday, bringing friends!">
             </label>
             <button type="submit" class="btn btn-primary">Add visit</button>
           </form>

@@ -16,15 +16,24 @@ showing who's in town and when — plus a "who's here right now" panel.
   `gratteri-ambassadors`) handles accounts, family profiles, and visits.
   - `families` — one profile per household (name, members, home town, bio, photo, calendar colour)
   - `visits` — date ranges when a family is in Gratteri
-  - `events` — one-off events on a date, with an `event_interest` table for
-    who's interested
+  - `events` — one-off events on a date, with `event_interest` (who's
+    interested) and `event_comments`
+  - `places`, `place_tips`, `place_hearts` — the village guide
+  - `gallery_photos` — the photo wall
   - `messages` — the noticeboard
-  - a `family-photos` storage bucket for profile photos
+  - `family-photos` and `gallery` storage buckets for images
   - Row-level security: any signed-in ambassador can *see* everything;
     each family can only *edit* their own profile, visits, events, and notes.
 
 The Supabase URL and publishable key at the top of `app.js` are safe to be
 public — all real protection is enforced by row-level security in the database.
+
+One deliberate trade-off to know about: photos (profile photos and the photo
+wall) are stored in *public* storage buckets, so anyone with a photo's direct
+URL can view it without logging in. The URLs contain long random identifiers
+so they can't be guessed, but a shared link works for anyone — same as
+sharing a photo over WhatsApp. All other data (profiles, visits, events,
+notes) is only readable by signed-in members.
 
 ## Features
 
@@ -35,13 +44,19 @@ public — all real protection is enforced by row-level security in the database
 - 📊 Year calendar (Gantt chart): one row per family, bars for each visit,
   month gridlines, a today marker, and year navigation
 - 📌 Events: anyone can pin a one-off event (festa, dinner, beach day) to a
-  date — it appears on the calendar, and other families can tap
-  "I'm interested" so the host knows who's coming
+  date — it appears on the calendar, other families can tap "I'm interested",
+  comment ("we'll bring wine!"), share it to WhatsApp, or add it to their
+  phone calendar
+- 🌿 Village guide: places and tips under categories (eat & drink, beaches,
+  walks, tradespeople, shops, practical) — any family can add places, leave
+  tips on each other's entries, and "❤️ we rate this" so the best float up
+- 🤝 "Your overlaps" panel: who your visits overlap with, and when
+- 🌅 Photo wall: a shared gallery of Gratteri moments
 - 📝 Noticeboard for short notes to the whole group
 - 📷 Family profile photos (stored in Supabase Storage)
 - 🏡 "In Gratteri right now" + "arriving in the next two weeks" panel
 - 🗂 Ambassadors directory with each family's next visit
-- 📱 Works on phones (the calendar scrolls sideways)
+- 📱 Works on phones, and installable as an app (Add to Home Screen)
 
 ## Deployment
 
