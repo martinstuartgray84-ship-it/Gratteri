@@ -21,6 +21,9 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 let session = null;
 let families = [];
 let visits = [];
+let messages = [];
+let events = [];
+let interests = [];
 let myFamily = null;
 let year = new Date().getFullYear();
 let selectedColor = PALETTE[0];
@@ -156,14 +159,19 @@ async function ensureMyFamily() {
 }
 
 async function loadData() {
-  const [famRes, visRes] = await Promise.all([
+  const [famRes, visRes, msgRes, evtRes, intRes] = await Promise.all([
     db.from("families").select("*").order("family_name"),
     db.from("visits").select("*").order("start_date"),
+    db.from("messages").select("*").order("created_at", { ascending: false }),
+    db.from("events").select("*").order("event_date"),
+    db.from("event_interest").select("*"),
   ]);
-  if (famRes.error) throw famRes.error;
-  if (visRes.error) throw visRes.error;
+  for (const r of [famRes, visRes, msgRes, evtRes, intRes]) if (r.error) throw r.error;
   families = famRes.data;
   visits = visRes.data;
+  messages = msgRes.data;
+  events = evtRes.data;
+  interests = intRes.data;
   myFamily = families.find((f) => f.user_id === session.user.id) || myFamily;
 }
 
@@ -188,7 +196,7 @@ async function refresh() {
 document.querySelectorAll(".nav-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", b === btn));
-    ["calendar", "families", "mine"].forEach((v) => {
+    ["calendar", "families", "events", "board", "mine"].forEach((v) => {
       $("view-" + v).classList.toggle("hidden", v !== btn.dataset.view);
     });
   });
@@ -199,10 +207,12 @@ function renderAll() {
   renderInTown();
   renderChart();
   renderFamilies();
+  renderEvents();
+  renderBoard();
   renderProfileForm();
   renderMyVisits();
   $("footer-stats").textContent =
-    `${families.length} famil${families.length === 1 ? "y" : "ies"} · ${visits.length} visit${visits.length === 1 ? "" : "s"} planned`;
+    `${families.length} famil${families.length === 1 ? "y" : "ies"} · ${visits.length} visit${visits.length === 1 ? "" : "s"} planned · ${events.length} event${events.length === 1 ? "" : "s"}`;
 }
 
 // ---------- render: who's in town ----------
@@ -273,6 +283,22 @@ function renderChart() {
     todayLine = `<div class="today-line" style="left:${(dayOfYear(today) / days) * 100}%"></div>`;
   }
 
+  // events marker row (only when this year has events)
+  const yearEvents = events.filter((ev) => ev.event_date >= yearStart && ev.event_date <= yearEnd);
+  if (yearEvents.length) {
+    const markers = yearEvents.map((ev) => {
+      const host = families.find((f) => f.id === ev.family_id);
+      const n = interests.filter((i) => i.event_id === ev.id).length;
+      const extra = [ev.description, n ? `${n} famil${n === 1 ? "y" : "ies"} interested` : ""].filter(Boolean).join(" · ");
+      return `<div class="event-marker" style="left:${(dayOfYear(ev.event_date) / days) * 100}%"
+        data-tip="📌 ${esc(ev.title)}|${esc(fmtDate(ev.event_date))} · by ${esc(host?.family_name || "?")}|${esc(extra)}"></div>`;
+    }).join("");
+    html += `<div class="chart-row chart-events-row">
+      <div class="chart-name">📌 Events</div>
+      <div class="chart-timeline">${monthLines}${todayLine}${markers}</div>
+    </div>`;
+  }
+
   for (const { fam, famVisits } of [...withVisits, ...withoutVisits]) {
     const bars = famVisits.map((v) => {
       const s = v.start_date < yearStart ? yearStart : v.start_date;
@@ -310,22 +336,147 @@ function showTip(target, x, y) {
 }
 function hideTip() { if (tipEl) { tipEl.remove(); tipEl = null; } }
 
+const hasTip = (el) => el.classList?.contains("visit-bar") || el.classList?.contains("event-marker");
 document.addEventListener("mouseover", (e) => {
-  if (e.target.classList?.contains("visit-bar")) {
+  if (hasTip(e.target)) {
     const r = e.target.getBoundingClientRect();
     showTip(e.target, r.left + r.width / 2, r.top);
   }
 });
 document.addEventListener("mouseout", (e) => {
-  if (e.target.classList?.contains("visit-bar")) hideTip();
+  if (hasTip(e.target)) hideTip();
 });
 document.addEventListener("click", (e) => {
-  if (e.target.classList?.contains("visit-bar")) {
+  if (hasTip(e.target)) {
     const r = e.target.getBoundingClientRect();
     showTip(e.target, r.left + r.width / 2, r.top);
   } else {
     hideTip();
   }
+});
+
+// ---------- render: events ----------
+function renderEvents() {
+  const list = $("events-list");
+  const today = todayStr();
+  const upcoming = events.filter((ev) => ev.event_date >= today);
+  const past = events.filter((ev) => ev.event_date < today).reverse();
+
+  const card = (ev, isPast) => {
+    const host = families.find((f) => f.id === ev.family_id);
+    const who = interests
+      .filter((i) => i.event_id === ev.id)
+      .map((i) => families.find((f) => f.id === i.family_id))
+      .filter(Boolean);
+    const iAmInterested = myFamily && who.some((f) => f.id === myFamily.id);
+    const isHost = myFamily && ev.family_id === myFamily.id;
+    const [y, m, d] = ev.event_date.split("-").map(Number);
+    return `<div class="event-card ${isPast ? "past" : ""}" style="border-left-color:${esc(host?.color || "#999")}">
+      <div class="event-date-badge"><span>${d}</span><small>${MONTHS[m - 1]} ${y}</small></div>
+      <div class="event-body">
+        <h3>${esc(ev.title)}</h3>
+        <div class="muted">by ${esc(host?.family_name || "a former member")}</div>
+        ${ev.description ? `<p>${esc(ev.description)}</p>` : ""}
+        <div class="event-interest">
+          ${who.length
+            ? `<span class="muted">Interested (${who.length}): ${esc(who.map((f) => f.family_name).join(", "))}</span>`
+            : `<span class="muted">No one has said they're interested yet</span>`}
+        </div>
+      </div>
+      <div class="event-actions">
+        ${isPast ? "" : `<button class="btn ${iAmInterested ? "btn-ghost" : "btn-primary"}" data-interest-event="${ev.id}" data-interested="${iAmInterested}" type="button">
+          ${iAmInterested ? "✓ Interested — undo" : "I'm interested!"}</button>`}
+        ${isHost ? `<button class="btn-danger-link" data-event-id="${ev.id}" type="button">Remove event</button>` : ""}
+      </div>
+    </div>`;
+  };
+
+  list.innerHTML =
+    (upcoming.length ? `<h3 class="events-subhead">Coming up</h3>` + upcoming.map((e) => card(e, false)).join("") : "") +
+    (past.length ? `<h3 class="events-subhead">Past events</h3>` + past.map((e) => card(e, true)).join("") : "") ||
+    `<p class="muted" style="text-align:center">No events yet — add the first one above! Festa, dinner, beach day…</p>`;
+
+  list.querySelectorAll("[data-interest-event]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const eventId = btn.dataset.interestEvent;
+      const { error } = btn.dataset.interested === "true"
+        ? await db.from("event_interest").delete().eq("event_id", eventId).eq("family_id", myFamily.id)
+        : await db.from("event_interest").insert({ event_id: eventId, family_id: myFamily.id });
+      if (error) { toast(error.message); return; }
+      await refresh();
+    });
+  });
+
+  list.querySelectorAll("[data-event-id]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Remove this event for everyone?")) return;
+      const { error } = await db.from("events").delete().eq("id", btn.dataset.eventId);
+      if (error) { toast(error.message); return; }
+      toast("Event removed");
+      await refresh();
+    });
+  });
+}
+
+$("event-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = $("event-message");
+  const { error } = await db.from("events").insert({
+    family_id: myFamily.id,
+    title: $("ef-title").value.trim(),
+    event_date: $("ef-date").value,
+    description: $("ef-desc").value.trim() || null,
+  });
+  if (error) { setMsg(msg, error.message, "error"); return; }
+  setMsg(msg, "");
+  $("event-form").reset();
+  toast("Event added 📌");
+  await refresh();
+});
+
+// ---------- render: noticeboard ----------
+function fmtWhen(iso) {
+  const d = new Date(iso);
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function renderBoard() {
+  const list = $("board-list");
+  list.innerHTML = messages.map((m) => {
+    const fam = families.find((f) => f.id === m.family_id);
+    const mine = fam && myFamily && fam.id === myFamily.id;
+    return `<div class="board-item">
+      <div class="board-item-head">
+        <span class="dot" style="background:${esc(fam?.color || "#999")}"></span>
+        <strong>${esc(fam?.family_name || "A former member")}</strong>
+        <span class="muted">${esc(fmtWhen(m.created_at))}</span>
+        ${mine ? `<button class="btn-danger-link" data-message-id="${m.id}" type="button">Remove</button>` : ""}
+      </div>
+      <p>${esc(m.body)}</p>
+    </div>`;
+  }).join("") || `<p class="muted" style="text-align:center">Nothing on the board yet — be the first to post!</p>`;
+
+  list.querySelectorAll("[data-message-id]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Remove this note?")) return;
+      const { error } = await db.from("messages").delete().eq("id", btn.dataset.messageId);
+      if (error) { toast(error.message); return; }
+      toast("Note removed");
+      await refresh();
+    });
+  });
+}
+
+$("board-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = $("board-message");
+  const body = $("board-body").value.trim();
+  if (!body) return;
+  const { error } = await db.from("messages").insert({ family_id: myFamily.id, body });
+  if (error) { setMsg(msg, error.message, "error"); return; }
+  setMsg(msg, "");
+  $("board-form").reset();
+  await refresh();
 });
 
 // ---------- render: family directory ----------
@@ -346,6 +497,7 @@ function renderFamilies() {
         : `🧳 Next visit: ${fmtRange(next.start_date, next.end_date)}`;
     }
     return `<div class="family-card" style="border-top-color:${esc(fam.color)}">
+      ${fam.photo_url ? `<img class="family-photo" src="${esc(fam.photo_url)}" alt="Photo of ${esc(fam.family_name)}" loading="lazy">` : ""}
       <h3>${esc(fam.family_name)}</h3>
       ${fam.home_town ? `<div class="home">📍 ${esc(fam.home_town)}</div>` : ""}
       ${fam.members ? `<div class="members">👨‍👩‍👧‍👦 ${esc(fam.members)}</div>` : ""}
@@ -355,9 +507,39 @@ function renderFamilies() {
   }).join("") || `<p class="muted">No families yet.</p>`;
 }
 
+// ---------- photo upload ----------
+$("pf-photo").addEventListener("change", async () => {
+  const file = $("pf-photo").files[0];
+  const msg = $("photo-message");
+  if (!file || !myFamily) return;
+  if (file.size > 5 * 1024 * 1024) {
+    setMsg(msg, "That photo is over 5 MB — please pick a smaller one.", "error");
+    return;
+  }
+  setMsg(msg, "Uploading…");
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const path = `${session.user.id}/photo.${ext}`;
+  const { error: upErr } = await db.storage.from("family-photos").upload(path, file, { upsert: true });
+  if (upErr) { setMsg(msg, upErr.message, "error"); return; }
+  const { data: pub } = db.storage.from("family-photos").getPublicUrl(path);
+  const photoUrl = `${pub.publicUrl}?v=${Date.now()}`;
+  const { error: updErr } = await db.from("families").update({ photo_url: photoUrl }).eq("id", myFamily.id);
+  if (updErr) { setMsg(msg, updErr.message, "error"); return; }
+  setMsg(msg, "Photo updated ✓", "ok");
+  setTimeout(() => setMsg(msg, ""), 2500);
+  await refresh();
+});
+
 // ---------- render: my profile ----------
 function renderProfileForm() {
   if (!myFamily) return;
+  const preview = $("pf-photo-preview");
+  if (myFamily.photo_url) {
+    preview.classList.remove("hidden");
+    preview.innerHTML = `<img src="${esc(myFamily.photo_url)}" alt="Your family photo">`;
+  } else {
+    preview.classList.add("hidden");
+  }
   $("pf-name").value = myFamily.family_name || "";
   $("pf-members").value = myFamily.members || "";
   $("pf-hometown").value = myFamily.home_town || "";

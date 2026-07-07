@@ -59,6 +59,8 @@
       <nav class="topbar-nav">
         <button class="nav-btn active" data-view="calendar" type="button">Calendar</button>
         <button class="nav-btn" data-view="families" type="button">Ambassadors</button>
+        <button class="nav-btn" data-view="events" type="button">Events</button>
+        <button class="nav-btn" data-view="board" type="button">Noticeboard</button>
         <button class="nav-btn" data-view="mine" type="button">My family</button>
       </nav>
       <button id="btn-logout" class="btn btn-ghost" type="button">Log out</button>
@@ -94,6 +96,42 @@
         <div id="families-grid" class="families-grid"></div>
       </section>
 
+      <!-- ===== Events view ===== -->
+      <section id="view-events" class="view hidden">
+        <div class="view-head"><h2>Events</h2></div>
+        <div class="panel">
+          <h3>Add an event</h3>
+          <form id="event-form" class="visit-form">
+            <label class="visit-note-label">What's happening? *
+              <input type="text" id="ef-title" required maxlength="120" placeholder="e.g. Festa di San Giacomo, dinner at ours, beach day…">
+            </label>
+            <label>Date *
+              <input type="date" id="ef-date" required>
+            </label>
+            <label class="visit-note-label">Details <span class="muted">(optional)</span>
+              <input type="text" id="ef-desc" maxlength="1000" placeholder="Where, what time, what to bring…">
+            </label>
+            <button type="submit" class="btn btn-primary">Add event</button>
+          </form>
+          <span id="event-message" class="form-message"></span>
+        </div>
+        <div id="events-list" class="events-list"></div>
+      </section>
+
+      <!-- ===== Noticeboard view ===== -->
+      <section id="view-board" class="view hidden">
+        <div class="view-head"><h2>Noticeboard</h2></div>
+        <div class="panel">
+          <form id="board-form" class="board-form">
+            <textarea id="board-body" rows="2" maxlength="2000" required
+              placeholder="Leave a note for the other ambassadors — a dinner invitation, a tip, a question…"></textarea>
+            <button type="submit" class="btn btn-primary">Post</button>
+          </form>
+          <span id="board-message" class="form-message"></span>
+        </div>
+        <div id="board-list" class="board-list"></div>
+      </section>
+
       <!-- ===== My family view ===== -->
       <section id="view-mine" class="view hidden">
         <div class="view-head"><h2>My family</h2></div>
@@ -113,6 +151,11 @@
             <label>A little about you
               <textarea id="pf-bio" rows="3" placeholder="How you found Gratteri, which house is yours, what you love about the village…"></textarea>
             </label>
+            <label>Family photo <span class="muted">(optional)</span>
+              <input type="file" id="pf-photo" accept="image/*">
+            </label>
+            <div id="pf-photo-preview" class="photo-preview hidden"></div>
+            <span id="photo-message" class="form-message"></span>
             <label>Your colour on the calendar</label>
             <div id="pf-colors" class="color-swatches"></div>
             <button type="submit" class="btn btn-primary">Save profile</button>
