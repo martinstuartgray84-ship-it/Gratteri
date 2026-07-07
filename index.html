@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gratteri Ambassadors</title>
+  <meta name="description" content="The shared calendar and community page for the Gratteri ambassadors — foreign homeowners in Gratteri, Sicily.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
+</head>
+<body>
+
+  <!-- ============ AUTH SCREEN ============ -->
+  <div id="auth-screen" class="auth-screen hidden">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="auth-emblem">🌿</div>
+        <h1>Gratteri <span>Ambassadors</span></h1>
+        <p class="auth-tagline">The shared calendar for friends of Gratteri, Sicily.<br>See who's in town, and when.</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button id="tab-login" class="auth-tab active" type="button">Log in</button>
+        <button id="tab-signup" class="auth-tab" type="button">Sign up</button>
+      </div>
+
+      <form id="auth-form">
+        <div id="signup-fields" class="hidden">
+          <label>Family / household name
+            <input type="text" id="auth-family-name" placeholder="e.g. The Gray Family" autocomplete="off">
+          </label>
+        </div>
+        <label>Email
+          <input type="email" id="auth-email" required autocomplete="email" placeholder="you@example.com">
+        </label>
+        <label>Password
+          <input type="password" id="auth-password" required autocomplete="current-password" minlength="6" placeholder="At least 6 characters">
+        </label>
+        <button type="submit" class="btn btn-primary btn-block" id="auth-submit">Log in</button>
+        <p id="auth-message" class="auth-message"></p>
+      </form>
+    </div>
+    <p class="auth-footer">A little corner of the internet for the foreign households of Gratteri 🇮🇹</p>
+  </div>
+
+  <!-- ============ MAIN APP ============ -->
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <div class="topbar-brand">
+        <span class="topbar-emblem">🌿</span>
+        <div>
+          <strong>Gratteri Ambassadors</strong>
+          <small>Gratteri · Sicilia</small>
+        </div>
+      </div>
+      <nav class="topbar-nav">
+        <button class="nav-btn active" data-view="calendar" type="button">Calendar</button>
+        <button class="nav-btn" data-view="families" type="button">Ambassadors</button>
+        <button class="nav-btn" data-view="mine" type="button">My family</button>
+      </nav>
+      <button id="btn-logout" class="btn btn-ghost" type="button">Log out</button>
+    </header>
+
+    <main class="main">
+
+      <!-- ===== Calendar view ===== -->
+      <section id="view-calendar" class="view">
+        <div id="in-town-panel" class="in-town-panel hidden"></div>
+
+        <div class="view-head">
+          <h2>Visit calendar</h2>
+          <div class="year-nav">
+            <button id="year-prev" class="btn btn-ghost" type="button" aria-label="Previous year">‹</button>
+            <span id="year-label" class="year-label"></span>
+            <button id="year-next" class="btn btn-ghost" type="button" aria-label="Next year">›</button>
+          </div>
+        </div>
+
+        <div class="chart-scroll">
+          <div id="chart" class="chart"></div>
+        </div>
+        <p class="chart-hint">Tip: hover (or tap) a bar to see the exact dates. Add your own visits under <em>My family</em>.</p>
+      </section>
+
+      <!-- ===== Families / directory view ===== -->
+      <section id="view-families" class="view hidden">
+        <div class="view-head">
+          <h2>The ambassadors</h2>
+          <span id="families-count" class="muted"></span>
+        </div>
+        <div id="families-grid" class="families-grid"></div>
+      </section>
+
+      <!-- ===== My family view ===== -->
+      <section id="view-mine" class="view hidden">
+        <div class="view-head"><h2>My family</h2></div>
+
+        <div class="panel">
+          <h3>Our profile</h3>
+          <form id="profile-form" class="profile-form">
+            <label>Family / household name *
+              <input type="text" id="pf-name" required placeholder="e.g. The Gray Family">
+            </label>
+            <label>Who's in the family?
+              <input type="text" id="pf-members" placeholder="e.g. Martin, Sofia, and the two boys">
+            </label>
+            <label>Where are you from?
+              <input type="text" id="pf-hometown" placeholder="e.g. Edinburgh, Scotland">
+            </label>
+            <label>A little about you
+              <textarea id="pf-bio" rows="3" placeholder="How you found Gratteri, which house is yours, what you love about the village…"></textarea>
+            </label>
+            <label>Your colour on the calendar</label>
+            <div id="pf-colors" class="color-swatches"></div>
+            <button type="submit" class="btn btn-primary">Save profile</button>
+            <span id="profile-message" class="form-message"></span>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h3>Our visits</h3>
+          <form id="visit-form" class="visit-form">
+            <label>From
+              <input type="date" id="vf-start" required>
+            </label>
+            <label>Until
+              <input type="date" id="vf-end" required>
+            </label>
+            <label class="visit-note-label">Note <span class="muted">(optional)</span>
+              <input type="text" id="vf-notes" placeholder="e.g. Summer holiday, bringing friends!">
+            </label>
+            <button type="submit" class="btn btn-primary">Add visit</button>
+          </form>
+          <span id="visit-message" class="form-message"></span>
+          <ul id="my-visits" class="visit-list"></ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">Made with ❤️ for Gratteri · <span id="footer-stats"></span></footer>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="vendor/supabase.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
