@@ -424,9 +424,13 @@ function renderChart() {
   // events marker row (only when this year has events)
   const yearEvents = events.filter((ev) => ev.event_date >= yearStart && ev.event_date <= yearEnd);
   if (yearEvents.length) {
-    const markers = yearEvents.map((ev) =>
-      `<div class="event-marker" style="left:${(dayOfYear(ev.event_date) / days) * 100}%" data-ref="event:${ev.id}"></div>`
-    ).join("");
+    const perDate = {};
+    const markers = yearEvents.map((ev) => {
+      // stagger same-day markers vertically so each stays hoverable
+      const n = perDate[ev.event_date] = (perDate[ev.event_date] || 0) + 1;
+      const offset = [0, -10, 10][(n - 1) % 3];
+      return `<div class="event-marker" style="left:${(dayOfYear(ev.event_date) / days) * 100}%;margin-top:${offset - 7}px" data-ref="event:${ev.id}"></div>`;
+    }).join("");
     html += `<div class="chart-row chart-events-row">
       <div class="chart-name">📌 Events</div>
       <div class="chart-timeline">${monthLines}${todayLine}${markers}</div>
