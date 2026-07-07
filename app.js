@@ -453,6 +453,15 @@ function renderChart() {
   }
 
   chart.innerHTML = html;
+
+  // on narrow screens the year is wider than the viewport — start centred on today
+  // (only when the user hasn't scrolled the chart themselves)
+  const scroller = chart.parentElement;
+  if (todayLine && scroller.scrollLeft === 0 && scroller.scrollWidth > scroller.clientWidth + 10) {
+    const nameW = chart.querySelector(".chart-name")?.offsetWidth || 0;
+    const timelineW = scroller.scrollWidth - nameW;
+    scroller.scrollLeft = Math.max(0, nameW + (dayOfYear(today) / days) * timelineW - scroller.clientWidth / 2);
+  }
 }
 
 $("year-prev").addEventListener("click", () => { year--; renderChart(); });
