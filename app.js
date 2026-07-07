@@ -298,6 +298,8 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
 // ---------- render: everything ----------
 function renderAll() {
   renderCheckin();
+  renderVillageStats();
+  renderProfileHero();
   renderStream();
   renderInTown();
   renderOverlaps();
@@ -311,6 +313,162 @@ function renderAll() {
   renderMyVisits();
   $("footer-stats").textContent =
     `${families.length} famil${families.length === 1 ? "y" : "ies"} · ${visits.length} visit${visits.length === 1 ? "" : "s"} planned · ${events.length} event${events.length === 1 ? "" : "s"} · ${places.length} place${places.length === 1 ? "" : "s"} in the guide`;
+}
+
+// ---------- gamification: badges & village stats ----------
+// The Estate Gratterese programme account is excluded from badges and counts.
+const SYSTEM_FAMILY_USER_ID = "c0111111-1111-4111-8111-111111111111";
+const realFamilies = () => families.filter((f) => f.user_id !== SYSTEM_FAMILY_USER_ID);
+
+function daysBetween(a, b) {
+  return (Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10)) -
+          Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10))) / 86400000 + 1;
+}
+
+function daysInGratteri(famId, y) {
+  const ys = `${y}-01-01`, ye = `${y}-12-31`;
+  let total = 0;
+  for (const v of visits.filter((v) => v.family_id === famId)) {
+    const s = v.start_date < ys ? ys : v.start_date;
+    const e = v.end_date > ye ? ye : v.end_date;
+    if (s <= e) total += daysBetween(s, e);
+  }
+  return total;
+}
+
+function computeBadges(famId) {
+  const fam = famById(famId);
+  if (!fam || fam.user_id === SYSTEM_FAMILY_USER_ID) return [];
+  const badges = [];
+  const add = (emoji, name, desc) => badges.push({ emoji, name, desc });
+
+  const pioneers = realFamilies()
+    .sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(0, 5);
+  if (pioneers.some((f) => f.id === famId)) add("🌱", "Pioneer", "Among the first five families to join");
+
+  const mine = visits.filter((v) => v.family_id === famId);
+  if (mine.some((v) => v.notes === "Checked in 📍")) add("📍", "Spontaneo", "Checked in on arrival — no planning needed");
+  if (mine.some((v) => {
+    const ms = +v.start_date.slice(5, 7), me = +v.end_date.slice(5, 7);
+    return ms < 6 || ms > 9 || me < 6 || me > 9;
+  })) add("❄️", "Fuori Stagione", "In Gratteri outside the summer months");
+  if (daysInGratteri(famId, new Date().getFullYear()) >= 30) add("🏡", "Summer Resident", "30+ days in Gratteri this year");
+
+  if (places.filter((p) => p.family_id === famId).length >= 3) add("🗺️", "Guide Author", "Added three or more places to the guide");
+  if (placeTips.filter((t) => t.family_id === famId).length >= 5) add("💡", "Local Sage", "Shared five or more tips");
+  if (interests.filter((i) => i.family_id === famId).length >= 3) add("🎉", "Festa Regular", "Interested in three or more events");
+  if (galleryPhotos.filter((p) => p.family_id === famId).length >= 5) add("📸", "Village Eye", "Five or more photos on the wall");
+
+  const overlapped = new Set();
+  for (const v of mine)
+    for (const o of visits)
+      if (o.family_id !== famId && o.start_date <= v.end_date && o.end_date >= v.start_date)
+        overlapped.add(o.family_id);
+  if (overlapped.size >= 3) add("🤝", "Matchmaker", "Overlapped with three or more families");
+
+  return badges;
+}
+
+const badgeChips = (famId, withNames) => computeBadges(famId).map((b) =>
+  withNames
+    ? `<span class="badge badge-named" title="${esc(b.desc)}">${b.emoji} ${esc(b.name)}</span>`
+    : `<span class="badge" title="${esc(b.name)} — ${esc(b.desc)}">${b.emoji}</span>`
+).join("");
+
+// ---------- render: profile hero ----------
+function renderProfileHero() {
+  const hero = $("profile-hero");
+  if (!myFamily) { hero.innerHTML = ""; return; }
+  const y = new Date().getFullYear();
+  const today = todayStr();
+  const days = daysInGratteri(myFamily.id, y);
+  const upcoming = visits.filter((v) => v.family_id === myFamily.id && v.end_date >= today).length;
+  const badges = badgeChips(myFamily.id, true);
+  hero.innerHTML = `
+    <div class="hero-top">
+      ${myFamily.photo_url
+        ? `<img class="hero-photo" src="${esc(myFamily.photo_url)}" alt="Your family photo">`
+        : `<div class="hero-photo hero-photo-empty">🌿</div>`}
+      <div>
+        <h3>${esc(myFamily.family_name)}</h3>
+        <span class="muted">Ambassador since ${esc(fmtDate(myFamily.created_at.slice(0, 10)))}</span>
+        ${badges ? `<div class="hero-badges">${badges}</div>` : `<div class="hero-badges muted">Badges appear as you visit, post, and share 🌱</div>`}
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-tile"><span>${days}</span><small>day${days === 1 ? "" : "s"} in Gratteri ${y}</small></div>
+      <div class="stat-tile"><span>${upcoming}</span><small>visit${upcoming === 1 ? "" : "s"} coming up</small></div>
+      <div class="stat-tile"><span>${places.filter((p) => p.family_id === myFamily.id).length + placeTips.filter((t) => t.family_id === myFamily.id).length}</span><small>guide contributions</small></div>
+      <div class="stat-tile"><span>${galleryPhotos.filter((p) => p.family_id === myFamily.id).length}</span><small>photos shared</small></div>
+    </div>`;
+}
+
+// ---------- render: village stats + Unwrapped ----------
+function renderVillageStats() {
+  const y = new Date().getFullYear();
+  const fams = realFamilies();
+  const totalDays = fams.reduce((sum, f) => sum + daysInGratteri(f.id, y), 0);
+  $("village-stats").innerHTML = `
+    <div class="village-chips">
+      <span class="chip">🏡 ${fams.length} famil${fams.length === 1 ? "y" : "ies"}</span>
+      <span class="chip">🗓 ${totalDays} days together in ${y}</span>
+      <span class="chip">📌 ${events.length} events</span>
+      <span class="chip">🌿 ${places.length} places</span>
+      <span class="chip">🌅 ${galleryPhotos.length} photos</span>
+    </div>
+    <button class="btn btn-primary" id="btn-unwrapped" type="button">🎁 Gratteri Unwrapped ${y}</button>`;
+}
+
+function renderUnwrapped() {
+  const y = new Date().getFullYear();
+  const ys = `${y}-01-01`, ye = `${y}-12-31`;
+  const fams = realFamilies();
+  const totalDays = fams.reduce((sum, f) => sum + daysInGratteri(f.id, y), 0);
+
+  // busiest day: most families in town at once
+  let busiest = { day: null, count: 0 };
+  const yearVisits = visits.filter((v) => v.start_date <= ye && v.end_date >= ys);
+  const checkpoints = [...new Set(yearVisits.map((v) => (v.start_date < ys ? ys : v.start_date)))];
+  for (const day of checkpoints) {
+    const count = new Set(yearVisits.filter((v) => v.start_date <= day && v.end_date >= day).map((v) => v.family_id)).size;
+    if (count > busiest.count) busiest = { day, count };
+  }
+
+  const heartCounts = places.map((p) => ({ p, n: placeHearts.filter((h) => h.place_id === p.id).length }))
+    .sort((a, b) => b.n - a.n)[0];
+  const hotEvent = events.map((ev) => ({ ev, n: interests.filter((i) => i.event_id === ev.id).length }))
+    .sort((a, b) => b.n - a.n)[0];
+  const longest = yearVisits.map((v) => ({ v, d: daysBetween(v.start_date < ys ? ys : v.start_date, v.end_date > ye ? ye : v.end_date) }))
+    .sort((a, b) => b.d - a.d)[0];
+  const first = [...yearVisits].sort((a, b) => a.start_date.localeCompare(b.start_date))[0];
+
+  const card = (num, label) => `<div class="uw-card"><span>${num}</span><small>${label}</small></div>`;
+  $("unwrapped").innerHTML = `
+    <div class="uw-inner">
+      <button class="btn btn-ghost uw-close" id="unwrapped-close" type="button">✕ Close</button>
+      <div class="uw-hero">
+        <div class="uw-emblem">🌿</div>
+        <h2>Gratteri Unwrapped</h2>
+        <div class="uw-year">${y}</div>
+        <p>Our village year, so far</p>
+      </div>
+      <div class="uw-grid">
+        ${card(totalDays, `days in Gratteri, all together`)}
+        ${card(fams.length, `ambassador famil${fams.length === 1 ? "y" : "ies"}`)}
+        ${busiest.count ? card(busiest.count, `families in town at once — peak on ${esc(fmtDate(busiest.day))}`) : ""}
+        ${first ? card(esc(fmtDate(first.start_date < ys ? ys : first.start_date)), `first arrival of the year — ${esc(famName(first.family_id))}`) : ""}
+        ${longest ? card(`${longest.d} days`, `longest stay — ${esc(famName(longest.v.family_id))}`) : ""}
+        ${card(events.length, "events on the calendar")}
+        ${hotEvent && hotEvent.n ? card(esc(hotEvent.ev.title), `the hot ticket — ${hotEvent.n} famil${hotEvent.n === 1 ? "y" : "ies"} interested`) : ""}
+        ${card(places.length, "places in the village guide")}
+        ${heartCounts && heartCounts.n ? card(esc(heartCounts.p.name), `most-loved place — ${heartCounts.n} ❤️`) : ""}
+        ${card(galleryPhotos.length, "photos on the wall")}
+        ${card(placeTips.length + messages.length + eventComments.length, "tips, notes & comments shared")}
+      </div>
+      <a class="btn btn-primary uw-share" target="_blank" rel="noopener"
+        href="https://wa.me/?text=${encodeURIComponent(`🌿 Gratteri Unwrapped ${y}: ${fams.length} families, ${totalDays} days in the village together, ${events.length} events, ${places.length} places in our guide. ${SITE_URL}`)}">Share to WhatsApp 💬</a>
+    </div>`;
+  $("unwrapped").classList.remove("hidden");
 }
 
 // ---------- render: the stream ----------
@@ -642,6 +800,7 @@ function renderFamilies() {
       ${fam.members ? `<div class="members">👨‍👩‍👧‍👦 ${esc(fam.members)}</div>` : ""}
       ${fam.bio ? `<div class="bio">${linkify(fam.bio)}</div>` : ""}
       <div class="next-visit">${esc(nextTxt)}</div>
+      ${computeBadges(fam.id).length ? `<div class="card-badges">${badgeChips(fam.id, false)}</div>` : ""}
     </div>`;
   }).join("") || `<p class="muted">No families yet.</p>`;
 }
@@ -971,7 +1130,10 @@ document.addEventListener("click", async (e) => {
   if (btn.dataset.filter) {
     guideFilter = btn.dataset.filter;
     renderGuide();
+    return;
   }
+  if (btn.id === "btn-unwrapped") { renderUnwrapped(); return; }
+  if (btn.id === "unwrapped-close") { $("unwrapped").classList.add("hidden"); }
 });
 
 document.addEventListener("submit", async (e) => {
