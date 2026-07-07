@@ -389,6 +389,54 @@ input:focus, textarea:focus { outline: 2px solid var(--terracotta); outline-offs
 .event-interest { margin-top: 0.4rem; }
 .event-actions { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end; }
 
+/* ---------- The stream ---------- */
+.stream-list { position: relative; padding: 0.2rem 0; }
+.stream-list::before {
+  content: "";
+  position: absolute;
+  left: 19px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: var(--line);
+}
+.stream-item { display: flex; gap: 0.8rem; position: relative; padding: 0.4rem 0; }
+.stream-emoji {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  z-index: 1;
+  box-shadow: var(--shadow);
+}
+.stream-body {
+  flex: 1;
+  min-width: 0;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.55rem 0.9rem;
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+.stream-body .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 0.15rem; }
+.stream-when { white-space: nowrap; }
+.stream-thumb {
+  display: block;
+  margin-top: 0.5rem;
+  max-width: 200px;
+  max-height: 140px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
 /* ---------- Check-in bar ---------- */
 .checkin-bar {
   display: flex;
