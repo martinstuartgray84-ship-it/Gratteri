@@ -287,7 +287,7 @@ async function enterApp() {
 document.querySelectorAll(".nav-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", b === btn));
-    ["calendar", "families", "events", "guide", "gallery", "board", "mine"].forEach((v) => {
+    ["calendar", "stream", "families", "events", "guide", "gallery", "board", "mine"].forEach((v) => {
       $("view-" + v).classList.toggle("hidden", v !== btn.dataset.view);
     });
     // pick up other families' additions, but not on rapid tab-flipping
@@ -298,6 +298,7 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
 // ---------- render: everything ----------
 function renderAll() {
   renderCheckin();
+  renderStream();
   renderInTown();
   renderOverlaps();
   renderChart();
@@ -310,6 +311,93 @@ function renderAll() {
   renderMyVisits();
   $("footer-stats").textContent =
     `${families.length} famil${families.length === 1 ? "y" : "ies"} · ${visits.length} visit${visits.length === 1 ? "" : "s"} planned · ${events.length} event${events.length === 1 ? "" : "s"} · ${places.length} place${places.length === 1 ? "" : "s"} in the guide`;
+}
+
+// ---------- render: the stream ----------
+function timeAgo(iso) {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 90) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  if (s < 7 * 86400) return `${Math.floor(s / 86400)}d ago`;
+  return fmtDate(iso.slice(0, 10));
+}
+
+const snippet = (s, n = 110) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
+
+function renderStream() {
+  const items = [];
+  const add = (created_at, familyId, emoji, html, extra = "") =>
+    created_at && items.push({ created_at, familyId, emoji, html, extra });
+  const who = (id) => `<strong>${esc(famName(id))}</strong>`;
+
+  families.forEach((f) =>
+    add(f.created_at, f.id, "🎉", `${who(f.id)} joined the ambassadors`));
+
+  visits.forEach((v) => {
+    const checkin = v.notes === "Checked in 📍";
+    add(v.created_at, v.family_id, checkin ? "📍" : "🧳",
+      checkin
+        ? `${who(v.family_id)} checked in — in Gratteri until <strong>${esc(fmtDate(v.end_date))}</strong>`
+        : `${who(v.family_id)} planned a visit: <strong>${esc(fmtRange(v.start_date, v.end_date))}</strong>${v.notes ? ` <span class="muted">· ${esc(snippet(v.notes, 60))}</span>` : ""}`);
+  });
+
+  events.forEach((ev) =>
+    add(ev.created_at, ev.family_id, "📌",
+      `${who(ev.family_id)} pinned <strong>${esc(ev.title)}</strong> · ${esc(fmtDate(ev.event_date))}`));
+
+  interests.forEach((i) => {
+    const ev = events.find((e) => e.id === i.event_id);
+    if (ev) add(i.created_at, i.family_id, "🙋",
+      `${who(i.family_id)} is interested in <em>${esc(ev.title)}</em>`);
+  });
+
+  eventComments.forEach((c) => {
+    const ev = events.find((e) => e.id === c.event_id);
+    if (ev) add(c.created_at, c.family_id, "💬",
+      `${who(c.family_id)} on <em>${esc(ev.title)}</em>: “${esc(snippet(c.body))}”`);
+  });
+
+  places.forEach((p) =>
+    add(p.created_at, p.family_id, (CATEGORIES[p.category] || CATEGORIES.other).emoji,
+      `${who(p.family_id)} added <strong>${esc(p.name)}</strong> to the guide`));
+
+  placeTips.forEach((t) => {
+    const p = places.find((x) => x.id === t.place_id);
+    if (p) add(t.created_at, t.family_id, "💡",
+      `${who(t.family_id)} tipped on <em>${esc(p.name)}</em>: “${esc(snippet(t.body))}”`);
+  });
+
+  placeHearts.forEach((h) => {
+    const p = places.find((x) => x.id === h.place_id);
+    if (p) add(h.created_at, h.family_id, "❤️",
+      `${who(h.family_id)} rates <strong>${esc(p.name)}</strong>`);
+  });
+
+  galleryPhotos.forEach((ph) => {
+    const { data: pub } = db.storage.from("gallery").getPublicUrl(ph.path);
+    add(ph.created_at, ph.family_id, "🌅",
+      `${who(ph.family_id)} shared a photo${ph.caption ? `: “${esc(snippet(ph.caption, 60))}”` : ""}`,
+      `<a href="${esc(pub.publicUrl)}" target="_blank" rel="noopener"><img class="stream-thumb" src="${esc(pub.publicUrl)}" alt="${esc(ph.caption || "Photo of Gratteri")}" loading="lazy"></a>`);
+  });
+
+  messages.forEach((m) =>
+    add(m.created_at, m.family_id, "📝",
+      `${who(m.family_id)} posted: “${esc(snippet(m.body))}”`));
+
+  items.sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+  $("stream-list").innerHTML = items.slice(0, 60).map((it) => `
+    <div class="stream-item">
+      <span class="stream-emoji">${it.emoji}</span>
+      <div class="stream-body">
+        <span class="dot" style="background:${esc(famColor(it.familyId))}"></span>
+        ${it.html}
+        <span class="muted stream-when">· ${esc(timeAgo(it.created_at))}</span>
+        ${it.extra}
+      </div>
+    </div>`).join("") ||
+    `<p class="muted" style="text-align:center">Nothing yet — the stream fills up as families join, plan visits, and post.</p>`;
 }
 
 // ---------- render: check-in bar ----------
