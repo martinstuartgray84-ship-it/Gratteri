@@ -324,11 +324,17 @@ input:focus, textarea:focus { outline: 2px solid var(--terracotta); outline-offs
   box-shadow: var(--shadow);
   padding: 1.1rem 1.2rem;
   border-top: 4px solid var(--terracotta);
+  overflow: hidden; /* clips the full-bleed photo to the rounded corners */
 }
 .family-card h3 { margin: 0 0 0.2rem; font-size: 1.1rem; }
 .family-card .home { color: var(--sea); font-size: 0.82rem; font-weight: 600; margin-bottom: 0.5rem; }
 .family-card .members { font-size: 0.86rem; margin-bottom: 0.5rem; }
 .family-card .bio { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 0.6rem; }
+.bio, .place-desc, .place-tip, .event-comment, .event-body p { overflow-wrap: anywhere; }
+.bio a, .place-desc a, .place-tip a, .event-comment a, .event-body p a, .board-item p a {
+  color: var(--sea);
+  font-weight: 600;
+}
 .family-card .next-visit { font-size: 0.8rem; font-weight: 600; color: var(--olive); }
 
 /* ---------- Events ---------- */
@@ -537,9 +543,9 @@ select {
 .family-photo {
   width: calc(100% + 2.4rem);
   margin: -1.1rem -1.2rem 0.8rem;
-  height: 150px;
+  height: 180px;
   object-fit: cover;
-  border-radius: 0 0 0 0;
+  object-position: center 25%; /* faces live in the top third of people photos */
   display: block;
 }
 .photo-preview { margin-bottom: 1rem; }
