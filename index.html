@@ -66,6 +66,7 @@
       </div>
       <nav class="topbar-nav">
         <button class="nav-btn active" data-view="calendar" type="button"><span class="nav-icon">📅</span><span class="nav-label">Calendar</span></button>
+        <button class="nav-btn" data-view="stream" type="button"><span class="nav-icon">⚡</span><span class="nav-label">Stream</span></button>
         <button class="nav-btn" data-view="families" type="button"><span class="nav-icon">🏘️</span><span class="nav-label">Families</span></button>
         <button class="nav-btn" data-view="events" type="button"><span class="nav-icon">📌</span><span class="nav-label">Events</span></button>
         <button class="nav-btn" data-view="guide" type="button"><span class="nav-icon">🌿</span><span class="nav-label">Guide</span></button>
@@ -97,6 +98,15 @@
           <div id="chart" class="chart"></div>
         </div>
         <p class="chart-hint">Tip: hover (or tap) a bar to see the exact dates. Add your own visits under <em>My family</em>.</p>
+      </section>
+
+      <!-- ===== Stream view ===== -->
+      <section id="view-stream" class="view hidden">
+        <div class="view-head">
+          <h2>The stream</h2>
+          <span class="muted">Everything happening, as it happens</span>
+        </div>
+        <div id="stream-list" class="stream-list"></div>
       </section>
 
       <!-- ===== Families / directory view ===== -->
