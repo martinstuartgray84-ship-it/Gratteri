@@ -1029,32 +1029,52 @@ function renderBoard() {
 }
 
 // ---------- photos: shared upload path ----------
-async function downscaleImage(file, maxDim) {
+async function decodeToCanvas(file, maxDim) {
+  const draw = (w, h, src) => {
+    const scale = Math.min(1, maxDim / Math.max(w, h));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    canvas.getContext("2d").drawImage(src, 0, 0, canvas.width, canvas.height);
+    return new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.85));
+  };
   try {
     const bmp = await createImageBitmap(file);
-    const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(bmp.width * scale));
-    canvas.height = Math.max(1, Math.round(bmp.height * scale));
-    canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.85));
-    return blob || file;
+    return await draw(bmp.width, bmp.height, bmp);
+  } catch { /* fall through to <img> decoding, which handles some formats/sizes better */ }
+  try {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const blob = await draw(img.naturalWidth, img.naturalHeight, img);
+    URL.revokeObjectURL(url);
+    return blob;
   } catch {
-    return file; // e.g. format the browser can't decode — upload the original
+    return null; // browser genuinely can't read this format
   }
 }
 
 async function uploadPhoto(bucket, file, msgEl, { maxMB, maxDim, upsert = false, name }) {
-  if (file.size > maxMB * 1024 * 1024) {
-    setMsg(msgEl, `That photo is over ${maxMB} MB — please pick a smaller one.`, "error");
+  if (file.size > 30 * 1024 * 1024) {
+    setMsg(msgEl, "That file is enormous (over 30 MB) — please pick a photo rather than a video or RAW file.", "error");
+    return null;
+  }
+  setMsg(msgEl, "Preparing photo…");
+  // downscale FIRST — a big phone photo becomes small, so it should never
+  // be rejected for the size it had before shrinking
+  const scaled = await decodeToCanvas(file, maxDim);
+  if (!scaled) {
+    setMsg(msgEl, "Your browser can't read that photo format — please choose a JPEG or PNG (on iPhone: Settings → Camera → Formats → Most Compatible).", "error");
+    return null;
+  }
+  if (scaled.size > maxMB * 1024 * 1024) {
+    setMsg(msgEl, `That photo is still over ${maxMB} MB after shrinking — please pick a smaller one.`, "error");
     return null;
   }
   setMsg(msgEl, "Uploading…");
-  const scaled = await downscaleImage(file, maxDim);
-  const ext = scaled.type === "image/jpeg" ? "jpg"
-    : (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-  const path = `${session.user.id}/${name || crypto.randomUUID()}.${ext}`;
-  const { error } = await db.storage.from(bucket).upload(path, scaled, { upsert, contentType: scaled.type || undefined });
+  const path = `${session.user.id}/${name || crypto.randomUUID()}.jpg`;
+  const { error } = await db.storage.from(bucket).upload(path, scaled, { upsert, contentType: "image/jpeg" });
   if (error) { setMsg(msgEl, error.message, "error"); return null; }
   return path;
 }
