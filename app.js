@@ -48,6 +48,16 @@ let myFamily = null;
 let year = new Date().getFullYear();
 let selectedColor = PALETTE[0];
 let guideFilter = "all";
+let exploreFilter = "all";
+
+const EXPLORE_CATS = {
+  village: { label: "In & around Gratteri", emoji: "🏘️" },
+  nature: { label: "Madonie & nature", emoji: "🥾" },
+  towns: { label: "Historic towns", emoji: "🏰" },
+  beach: { label: "Coast & beaches", emoji: "🏖️" },
+  food: { label: "Food & wine", emoji: "🍝" },
+  daytrip: { label: "Day trips", emoji: "🚗" },
+};
 let appEntered = false;     // guards enterApp against duplicate auth events (TOKEN_REFRESHED etc.)
 let profileDirty = false;   // true while the profile form has unsaved edits — blocks re-population
 let loadSeq = 0;            // discards out-of-order loadData responses
@@ -992,7 +1002,7 @@ function renderGallery() {
     const mine = myFamily && ph.family_id === myFamily.id;
     const { data: pub } = db.storage.from("gallery").getPublicUrl(ph.path);
     return `<figure class="gallery-item">
-      <img src="${esc(pub.publicUrl)}" alt="${esc(ph.caption || "Photo of Gratteri")}" loading="lazy">
+      <a href="${esc(pub.publicUrl)}" target="_blank" rel="noopener"><img src="${esc(pub.publicUrl)}" alt="${esc(ph.caption || "Photo of Gratteri")}" loading="lazy"></a>
       <figcaption>
         ${ph.caption ? `<span>${esc(ph.caption)}</span>` : ""}
         <span class="muted">— ${esc(famName(ph.family_id))}</span>
@@ -1171,8 +1181,57 @@ document.addEventListener("click", async (e) => {
     return;
   }
   if (btn.id === "btn-unwrapped") { renderUnwrapped(); return; }
-  if (btn.id === "unwrapped-close") { $("unwrapped").classList.add("hidden"); }
+  if (btn.id === "unwrapped-close") { $("unwrapped").classList.add("hidden"); return; }
+  if (btn.dataset.guidemode) {
+    document.querySelectorAll(".mode-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    $("guide-ambassadors").classList.toggle("hidden", btn.dataset.guidemode !== "tips");
+    $("guide-explore").classList.toggle("hidden", btn.dataset.guidemode !== "explore");
+    return;
+  }
+  if (btn.dataset.explorefilter) {
+    exploreFilter = btn.dataset.explorefilter;
+    renderExplore();
+  }
 });
+
+// ---------- render: AI tour guide ----------
+function renderExplore() {
+  const data = window.EXPLORE_DATA || [];
+  const counts = {};
+  data.forEach((e) => { counts[e.category] = (counts[e.category] || 0) + 1; });
+
+  $("explore-filters").innerHTML =
+    `<button class="filter-chip ${exploreFilter === "all" ? "active" : ""}" data-explorefilter="all" type="button">All (${data.length})</button>` +
+    Object.entries(EXPLORE_CATS).map(([key, c]) =>
+      `<button class="filter-chip ${exploreFilter === key ? "active" : ""}" data-explorefilter="${key}" type="button">${c.emoji} ${c.label}${counts[key] ? ` (${counts[key]})` : ""}</button>`
+    ).join("");
+
+  const shown = data.filter((e) => exploreFilter === "all" || e.category === exploreFilter);
+  $("explore-list").innerHTML = shown.map((e) => `
+    <div class="explore-card">
+      <div class="place-head">
+        <span class="place-emoji">${e.emoji}</span>
+        <div class="place-title">
+          <h3>${esc(e.name)}</h3>
+          <div class="explore-chips">
+            <span class="chip">📍 ${esc(e.distance)}</span>
+            ${e.effort ? `<span class="chip">${e.effort === "easy" ? "🟢" : e.effort === "moderate" ? "🟡" : "🔴"} ${esc(e.effort)}</span>` : ""}
+            ${e.season ? `<span class="chip">🗓 ${esc(e.season)}</span>` : ""}
+          </div>
+        </div>
+      </div>
+      <p class="place-desc"><strong>${esc(e.blurb)}</strong></p>
+      <details class="explore-more">
+        <summary>The full brief</summary>
+        <p>${esc(e.details)}</p>
+        ${(e.sources || []).length ? `<p class="muted explore-sources">Sources: ${e.sources.map((s, i) =>
+          `<a href="${esc(s)}" target="_blank" rel="noopener">[${i + 1}]</a>`).join(" ")}</p>` : ""}
+      </details>
+      <div class="place-links">
+        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps_query)}" target="_blank" rel="noopener">📍 Open in Maps</a>
+      </div>
+    </div>`).join("") || `<p class="muted" style="text-align:center">Nothing in this category yet.</p>`;
+}
 
 document.addEventListener("submit", async (e) => {
   const form = e.target;
@@ -1316,6 +1375,7 @@ function renderMyVisits() {
 // ---------- boot ----------
 $("plf-category").innerHTML = Object.entries(CATEGORIES).map(([key, c]) =>
   `<option value="${key}">${c.emoji} ${c.label}</option>`).join("");
+renderExplore(); // static data — render once at load
 
 (async () => {
   const { data } = await db.auth.getSession();

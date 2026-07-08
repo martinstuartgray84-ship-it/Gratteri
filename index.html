@@ -147,9 +147,14 @@
       <!-- ===== Village Guide view ===== -->
       <section id="view-guide" class="view hidden">
         <div class="view-head">
-          <h2>Village guide</h2>
-          <span class="muted">The best of Gratteri, from all of us</span>
+          <h2>Guide</h2>
+          <div class="guide-mode">
+            <button class="mode-btn active" data-guidemode="tips" type="button">🌿 Ambassador tips</button>
+            <button class="mode-btn" data-guidemode="explore" type="button">🧭 AI Tour Guide</button>
+          </div>
         </div>
+
+        <div id="guide-ambassadors">
         <div id="guide-filters" class="guide-filters"></div>
         <div class="panel">
           <h3>Add a place or tip</h3>
@@ -176,6 +181,19 @@
           </form>
         </div>
         <div id="places-list" class="places-list"></div>
+        </div><!-- /guide-ambassadors -->
+
+        <div id="guide-explore" class="hidden">
+          <div class="explore-banner">
+            <span class="explore-bot">🤖</span>
+            <div>
+              <strong>Your AI tour guide</strong>
+              <p>I scoured the internet for the most epic things to do in and around Gratteri — the Madonie, the coast, and beyond. Researched and verified July 2026; always check ahead for seasonal openings. Found a gem I missed? Add it to the Ambassador tips!</p>
+            </div>
+          </div>
+          <div id="explore-filters" class="guide-filters"></div>
+          <div id="explore-list" class="places-list"></div>
+        </div>
       </section>
 
       <!-- ===== Photo wall view ===== -->
@@ -285,6 +303,7 @@
   <div id="toast" class="toast hidden"></div>
 
   <script src="vendor/supabase.js"></script>
+  <script src="guide-data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
