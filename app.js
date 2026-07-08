@@ -56,7 +56,9 @@ const EXPLORE_CATS = {
   nature: { label: "Madonie & nature", emoji: "🥾" },
   towns: { label: "Historic towns", emoji: "🏰" },
   beach: { label: "Coast & beaches", emoji: "🏖️" },
-  food: { label: "Food & eating out", emoji: "🍝" },
+  food: { label: "Food & dishes", emoji: "🍝" },
+  eat: { label: "Restaurants & cafés", emoji: "🍽️" },
+  shop: { label: "Bakers, butchers & delis", emoji: "🥖" },
   wine: { label: "Wine & vineyards", emoji: "🍷" },
   daytrip: { label: "Day trips", emoji: "🚗" },
 };
@@ -1425,14 +1427,13 @@ function renderExplore() {
         </div>
       </div>
       <p class="place-desc"><strong>${esc(e.blurb)}</strong></p>
-      <details class="explore-more">
+      ${e.details ? `<details class="explore-more">
         <summary>The full brief</summary>
         <p>${esc(e.details)}</p>
-        ${(e.sources || []).length ? `<p class="muted explore-sources">Sources: ${e.sources.map((s, i) =>
-          `<a href="${esc(s)}" target="_blank" rel="noopener">[${i + 1}]</a>`).join(" ")}</p>` : ""}
-      </details>
+      </details>` : ""}
       <div class="place-links">
-        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps_query)}" target="_blank" rel="noopener">📍 Open in Maps</a>
+        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps_query)}" target="_blank" rel="noopener">📍 Maps</a>
+        ${(e.sources || []).length ? `<a href="${esc(e.sources[0])}" target="_blank" rel="noopener">ℹ️ Info</a>` : ""}
         <span class="vote-group">
           <button class="vote-btn ${myVote === 1 ? "voted-up" : ""}" data-vote="1" data-guide="${id}" type="button" aria-label="Recommend">👍 ${up}</button>
           <button class="vote-btn ${myVote === -1 ? "voted-down" : ""}" data-vote="-1" data-guide="${id}" type="button" aria-label="Not worth it">👎 ${down}</button>
