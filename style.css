@@ -782,6 +782,22 @@ select {
 .explore-more p { font-size: 0.88rem; margin: 0.4rem 0; }
 .explore-sources { font-size: 0.75rem; }
 .explore-sources a { color: var(--ink-soft); }
+.vote-group { display: inline-flex; gap: 0.4rem; margin-left: auto; }
+.vote-btn {
+  border: 1px solid var(--line);
+  background: var(--white);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.vote-btn:hover { border-color: var(--terracotta); }
+.vote-btn.voted-up { background: #EEF3E4; border-color: #C4D2A6; color: var(--ok); }
+.vote-btn.voted-down { background: #FBEDEA; border-color: #E8BDB5; color: var(--danger); }
+.explore-card .place-links { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 
 /* ---------- Noticeboard ---------- */
 .board-form { display: flex; gap: 0.8rem; align-items: flex-start; }
