@@ -44,6 +44,7 @@ let placeTips = [];
 let placeHearts = [];
 let galleryPhotos = [];
 let memberships = [];
+let guideVotes = [];
 let myFamily = null;
 let year = new Date().getFullYear();
 let selectedColor = PALETTE[0];
@@ -55,9 +56,13 @@ const EXPLORE_CATS = {
   nature: { label: "Madonie & nature", emoji: "🥾" },
   towns: { label: "Historic towns", emoji: "🏰" },
   beach: { label: "Coast & beaches", emoji: "🏖️" },
-  food: { label: "Food & wine", emoji: "🍝" },
+  food: { label: "Food & eating out", emoji: "🍝" },
+  wine: { label: "Wine & vineyards", emoji: "🍷" },
   daytrip: { label: "Day trips", emoji: "🚗" },
 };
+
+// stable id for a guide entry (used as the vote key) — derived from its name
+const guideId = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 let appEntered = false;     // guards enterApp against duplicate auth events (TOKEN_REFRESHED etc.)
 let profileDirty = false;   // true while the profile form has unsaved edits — blocks re-population
 let loadSeq = 0;            // discards out-of-order loadData responses
@@ -276,6 +281,7 @@ async function loadData() {
     db.from("place_hearts").select("*"),
     db.from("gallery_photos").select("*").order("created_at", { ascending: false }),
     db.from("family_members").select("*"),
+    db.from("guide_votes").select("*"),
   ]);
   for (const r of results) if (r.error) throw r.error;
   return results.map((r) => r.data);
@@ -286,7 +292,7 @@ async function refresh() {
   const data = await loadData();
   if (seq !== loadSeq || !session) return; // superseded by a newer refresh, or signed out mid-flight
   [families, visits, messages, events, interests, eventComments,
-    places, placeTips, placeHearts, galleryPhotos, memberships] = data;
+    places, placeTips, placeHearts, galleryPhotos, memberships, guideVotes] = data;
   const myMem = memberships.find((m) => m.user_id === session.user.id);
   myFamily = (myMem && families.find((f) => f.id === myMem.family_id)) || myFamily;
   lastLoadAt = Date.now();
@@ -352,6 +358,7 @@ function renderAll() {
   renderGuide();
   renderGallery();
   renderBoard();
+  renderExplore(); // re-render so vote counts reflect the latest data
   renderProfileForm();
   renderMyVisits();
   $("footer-stats").textContent =
@@ -1371,6 +1378,10 @@ document.addEventListener("click", async (e) => {
   if (btn.dataset.explorefilter) {
     exploreFilter = btn.dataset.explorefilter;
     renderExplore();
+    return;
+  }
+  if (btn.dataset.vote && btn.dataset.guide) {
+    await voteGuide(btn.dataset.guide, +btn.dataset.vote);
   }
 });
 
@@ -1386,8 +1397,21 @@ function renderExplore() {
       `<button class="filter-chip ${exploreFilter === key ? "active" : ""}" data-explorefilter="${key}" type="button">${c.emoji} ${c.label}${counts[key] ? ` (${counts[key]})` : ""}</button>`
     ).join("");
 
-  const shown = data.filter((e) => exploreFilter === "all" || e.category === exploreFilter);
-  $("explore-list").innerHTML = shown.map((e) => `
+  // attach votes, then sort each view by net score (ambassador favourites rise)
+  const withVotes = data.map((e) => {
+    const id = guideId(e.name);
+    const vs = guideVotes.filter((v) => v.guide_id === id);
+    const up = vs.filter((v) => v.vote === 1).length;
+    const down = vs.filter((v) => v.vote === -1).length;
+    const mine = myFamily && vs.find((v) => v.family_id === myFamily.id);
+    return { e, id, up, down, score: up - down, myVote: mine ? mine.vote : 0 };
+  });
+
+  const shown = withVotes
+    .filter((x) => exploreFilter === "all" || x.e.category === exploreFilter)
+    .sort((a, b) => b.score - a.score);
+
+  $("explore-list").innerHTML = shown.map(({ e, id, up, down, myVote }) => `
     <div class="explore-card">
       <div class="place-head">
         <span class="place-emoji">${e.emoji}</span>
@@ -1409,8 +1433,26 @@ function renderExplore() {
       </details>
       <div class="place-links">
         <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps_query)}" target="_blank" rel="noopener">📍 Open in Maps</a>
+        <span class="vote-group">
+          <button class="vote-btn ${myVote === 1 ? "voted-up" : ""}" data-vote="1" data-guide="${id}" type="button" aria-label="Recommend">👍 ${up}</button>
+          <button class="vote-btn ${myVote === -1 ? "voted-down" : ""}" data-vote="-1" data-guide="${id}" type="button" aria-label="Not worth it">👎 ${down}</button>
+        </span>
       </div>
     </div>`).join("") || `<p class="muted" style="text-align:center">Nothing in this category yet.</p>`;
+}
+
+async function voteGuide(guide, vote) {
+  if (!myFamily) return;
+  const existing = guideVotes.find((v) => v.guide_id === guide && v.family_id === myFamily.id);
+  let error;
+  if (existing && existing.vote === vote) {
+    ({ error } = await db.from("guide_votes").delete().eq("guide_id", guide).eq("family_id", myFamily.id));
+  } else {
+    ({ error } = await db.from("guide_votes")
+      .upsert({ guide_id: guide, family_id: myFamily.id, vote }, { onConflict: "guide_id,family_id" }));
+  }
+  if (error) { toast(error.message); return; }
+  await safeRefresh();
 }
 
 document.addEventListener("submit", async (e) => {
