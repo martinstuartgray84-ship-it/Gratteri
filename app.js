@@ -1002,7 +1002,7 @@ function renderGallery() {
     const mine = myFamily && ph.family_id === myFamily.id;
     const { data: pub } = db.storage.from("gallery").getPublicUrl(ph.path);
     return `<figure class="gallery-item">
-      <img src="${esc(pub.publicUrl)}" alt="${esc(ph.caption || "Photo of Gratteri")}" loading="lazy">
+      <a href="${esc(pub.publicUrl)}" target="_blank" rel="noopener"><img src="${esc(pub.publicUrl)}" alt="${esc(ph.caption || "Photo of Gratteri")}" loading="lazy"></a>
       <figcaption>
         ${ph.caption ? `<span>${esc(ph.caption)}</span>` : ""}
         <span class="muted">— ${esc(famName(ph.family_id))}</span>

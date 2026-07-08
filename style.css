@@ -762,9 +762,10 @@ select {
 .family-photo {
   width: calc(100% + 2.4rem);
   margin: -1.1rem -1.2rem 0.8rem;
-  height: 180px;
+  height: auto;            /* natural aspect ratio — no more cropped heads */
+  max-height: 340px;       /* only very tall portrait shots get a gentle crop */
   object-fit: cover;
-  object-position: center 25%; /* faces live in the top third of people photos */
+  object-position: center 25%; /* and that crop favours faces in the top third */
   display: block;
 }
 .photo-preview { margin-bottom: 1rem; }
