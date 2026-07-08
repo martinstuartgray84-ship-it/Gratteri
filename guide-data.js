@@ -1,0 +1,1 @@
+window.EXPLORE_DATA = [];

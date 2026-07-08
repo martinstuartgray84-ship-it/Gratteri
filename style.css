@@ -685,6 +685,63 @@ select {
   align-items: baseline;
 }
 
+/* ---------- AI Tour Guide (Explore) ---------- */
+.guide-mode {
+  display: flex;
+  background: var(--sand);
+  border-radius: 999px;
+  padding: 3px;
+}
+.mode-btn {
+  border: none;
+  background: transparent;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mode-btn.active { background: var(--white); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+.explore-banner {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  background: linear-gradient(120deg, #EAF0F4, #F3EEE2);
+  border: 1px solid #CBD8E0;
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.9rem;
+}
+.explore-bot { font-size: 1.8rem; }
+.explore-banner p { margin: 0.25rem 0 0; color: var(--ink-soft); }
+
+.explore-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--sea);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.2rem;
+}
+.explore-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.3rem; }
+.explore-chips .chip { font-size: 0.75rem; padding: 0.15rem 0.6rem; }
+.explore-more { margin: 0.3rem 0 0.2rem; }
+.explore-more summary {
+  cursor: pointer;
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: var(--sea);
+  padding: 0.2rem 0;
+}
+.explore-more p { font-size: 0.88rem; margin: 0.4rem 0; }
+.explore-sources { font-size: 0.75rem; }
+.explore-sources a { color: var(--ink-soft); }
+
 /* ---------- Noticeboard ---------- */
 .board-form { display: flex; gap: 0.8rem; align-items: flex-start; }
 .board-form textarea { flex: 1; margin-top: 0; resize: vertical; }
