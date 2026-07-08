@@ -43,6 +43,7 @@ let places = [];
 let placeTips = [];
 let placeHearts = [];
 let galleryPhotos = [];
+let memberships = [];
 let myFamily = null;
 let year = new Date().getFullYear();
 let selectedColor = PALETTE[0];
@@ -157,14 +158,15 @@ $("auth-form").addEventListener("submit", async (e) => {
   try {
     if (authMode === "signup") {
       const familyName = $("auth-family-name").value.trim();
-      if (!familyName) {
-        setMsg(msg, "Please give your family or household a name.", "error");
+      const familyCode = $("auth-family-code").value.trim();
+      if (!familyName && !familyCode) {
+        setMsg(msg, "Give your family a name — or enter a family code to join one already here.", "error");
         return;
       }
       const { data, error } = await db.auth.signUp({
         email,
         password,
-        options: { data: { family_name: familyName } },
+        options: { data: { family_name: familyName || null, family_code: familyCode || null } },
       });
       if (error) throw error;
       if (!data.session) {
@@ -211,26 +213,41 @@ db.auth.onAuthStateChange((_event, s) => {
 
 // ---------- data ----------
 async function ensureMyFamily() {
-  const { data: existing, error } = await db
-    .from("families").select("*").eq("user_id", session.user.id).maybeSingle();
-  if (error) throw error;
-  if (existing) { myFamily = existing; return; }
+  const uid = session.user.id;
+  const findMine = async () => {
+    const { data: mem, error } = await db
+      .from("family_members").select("family_id").eq("user_id", uid).maybeSingle();
+    if (error) throw error;
+    if (!mem) return null;
+    const { data: fam, error: e2 } = await db
+      .from("families").select("*").eq("id", mem.family_id).maybeSingle();
+    if (e2) throw e2;
+    return fam;
+  };
 
-  const name = session.user.user_metadata?.family_name || "New family";
+  myFamily = await findMine();
+  if (myFamily) return;
+
+  const meta = session.user.user_metadata || {};
+  if (meta.family_code) {
+    const { error: joinErr } = await db.rpc("join_family", { code: meta.family_code });
+    if (!joinErr) {
+      myFamily = await findMine();
+      if (myFamily) { toast(`Welcome to ${myFamily.family_name}! 🏡`); return; }
+    }
+    // bad code — fall through and give them their own family
+  }
+
+  const name = meta.family_name || "New family";
   const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
   const { data: created, error: insErr } = await db
     .from("families")
-    .insert({ user_id: session.user.id, family_name: name, color })
+    .insert({ user_id: uid, family_name: name, color })
     .select().single();
   if (insErr) {
-    if (insErr.code === "23505") {
-      // another tab/session won the first-login race — use its row
-      const { data: race, error: raceErr } = await db
-        .from("families").select("*").eq("user_id", session.user.id).maybeSingle();
-      if (raceErr) throw raceErr;
-      myFamily = race;
-      return;
-    }
+    // lost a race with another tab/session — adopt whatever family won
+    myFamily = await findMine();
+    if (myFamily) return;
     throw insErr;
   }
   myFamily = created;
@@ -248,6 +265,7 @@ async function loadData() {
     db.from("place_tips").select("*").order("created_at"),
     db.from("place_hearts").select("*"),
     db.from("gallery_photos").select("*").order("created_at", { ascending: false }),
+    db.from("family_members").select("*"),
   ]);
   for (const r of results) if (r.error) throw r.error;
   return results.map((r) => r.data);
@@ -258,8 +276,9 @@ async function refresh() {
   const data = await loadData();
   if (seq !== loadSeq || !session) return; // superseded by a newer refresh, or signed out mid-flight
   [families, visits, messages, events, interests, eventComments,
-    places, placeTips, placeHearts, galleryPhotos] = data;
-  myFamily = families.find((f) => f.user_id === session.user.id) || myFamily;
+    places, placeTips, placeHearts, galleryPhotos, memberships] = data;
+  const myMem = memberships.find((m) => m.user_id === session.user.id);
+  myFamily = (myMem && families.find((f) => f.id === myMem.family_id)) || myFamily;
   lastLoadAt = Date.now();
   renderAll();
 }
@@ -391,7 +410,9 @@ function renderProfileHero() {
         : `<div class="hero-photo hero-photo-empty">🌿</div>`}
       <div>
         <h3>${esc(myFamily.family_name)}</h3>
-        <span class="muted">Ambassador since ${esc(fmtDate(myFamily.created_at.slice(0, 10)))}</span>
+        <span class="muted">Ambassador since ${esc(fmtDate(myFamily.created_at.slice(0, 10)))}
+          · code <strong>${esc(myFamily.invite_code || "—")}</strong>
+          · ${memberships.filter((m) => m.family_id === myFamily.id).length || 1} login${memberships.filter((m) => m.family_id === myFamily.id).length === 1 ? "" : "s"}</span>
         ${badges ? `<div class="hero-badges">${badges}</div>` : `<div class="hero-badges muted">Badges appear as you visit, post, and share 🌱</div>`}
       </div>
     </div>
@@ -401,7 +422,24 @@ function renderProfileHero() {
       <div class="stat-tile"><span>${places.filter((p) => p.family_id === myFamily.id).length + placeTips.filter((t) => t.family_id === myFamily.id).length}</span><small>guide contributions</small></div>
       <div class="stat-tile"><span>${galleryPhotos.filter((p) => p.family_id === myFamily.id).length}</span><small>photos shared</small></div>
     </div>`;
+
+  $("family-code-line").textContent =
+    `Your family code is ${myFamily.invite_code || "—"} — share it with your household so their login joins ${myFamily.family_name} instead of creating a new family. They can enter it when signing up, or below after.`;
 }
+
+$("join-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = $("join-message");
+  const code = $("jf-code").value.trim();
+  if (!code) return;
+  if (!confirm(`Join the family with code ${code.toUpperCase()}? Your login and everything you've posted will move into that family, and your current family entry will be retired.`)) return;
+  const { error } = await db.rpc("join_family", { code });
+  if (error) { setMsg(msg, error.message, "error"); return; }
+  setMsg(msg, "");
+  $("join-form").reset();
+  toast("Welcome to your family! 🏡");
+  await safeRefresh();
+});
 
 // ---------- render: village stats + Unwrapped ----------
 function renderVillageStats() {
