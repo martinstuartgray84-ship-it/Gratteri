@@ -40,6 +40,9 @@
           <label>Family / household name
             <input type="text" id="auth-family-name" maxlength="120" placeholder="e.g. The Gray Family" autocomplete="off">
           </label>
+          <label>Family code <span class="muted">(joining a family that's already here?)</span>
+            <input type="text" id="auth-family-code" maxlength="12" placeholder="e.g. GRT-7K2M" autocomplete="off">
+          </label>
         </div>
         <label>Email
           <input type="email" id="auth-email" required autocomplete="email" placeholder="you@example.com">
@@ -259,6 +262,18 @@
           </form>
           <span id="visit-message" class="form-message"></span>
           <ul id="my-visits" class="visit-list"></ul>
+        </div>
+
+        <div class="panel">
+          <h3>Household logins</h3>
+          <p class="muted" id="family-code-line"></p>
+          <form id="join-form" class="visit-form">
+            <label class="visit-note-label">Have another family's code?
+              <input type="text" id="jf-code" maxlength="12" placeholder="e.g. GRT-7K2M" autocomplete="off">
+            </label>
+            <button type="submit" class="btn btn-primary">Join that family</button>
+          </form>
+          <span id="join-message" class="form-message"></span>
         </div>
       </section>
     </main>
