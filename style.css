@@ -423,7 +423,7 @@ input:focus, textarea:focus { outline: 2px solid var(--terracotta); outline-offs
   width: 76px;
   height: 76px;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: cover;       /* focal point set inline keeps the subject centred */
   border: 3px solid var(--white);
   box-shadow: var(--shadow);
   flex-shrink: 0;
@@ -545,10 +545,13 @@ input:focus, textarea:focus { outline: 2px solid var(--terracotta); outline-offs
 .stream-thumb {
   display: block;
   margin-top: 0.5rem;
-  max-width: 200px;
-  max-height: 140px;
+  width: 180px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;       /* focal point set inline */
   border-radius: 8px;
   border: 1px solid var(--line);
+  cursor: zoom-in;
+  background: var(--sand);
 }
 
 /* ---------- Check-in bar ---------- */
@@ -677,11 +680,12 @@ select {
 }
 .gallery-item img {
   width: 100%;
-  height: auto;            /* natural aspect ratio — no more cropped cats */
-  max-height: 340px;       /* only extremely tall shots get a gentle crop */
-  object-fit: cover;
-  object-position: center 30%;
+  aspect-ratio: 1 / 1;     /* uniform square grid; no layout shift */
+  height: auto;
+  object-fit: cover;       /* focal point (inline) keeps the subject in frame */
   display: block;
+  cursor: zoom-in;
+  background: var(--sand);
 }
 .gallery-item figcaption {
   padding: 0.5rem 0.8rem 0.7rem;
@@ -769,19 +773,95 @@ select {
 .family-photo {
   width: calc(100% + 2.4rem);
   margin: -1.1rem -1.2rem 0.8rem;
-  height: auto;            /* natural aspect ratio — no more cropped heads */
-  max-height: 340px;       /* only very tall portrait shots get a gentle crop */
-  object-fit: cover;
-  object-position: center 25%; /* and that crop favours faces in the top third */
+  aspect-ratio: 4 / 3;     /* consistent card shape; no layout shift */
+  height: auto;
+  object-fit: cover;       /* focal point (inline object-position) keeps subject in frame */
   display: block;
+  cursor: zoom-in;
+  background: var(--sand);
 }
 .photo-preview { margin-bottom: 1rem; }
 .photo-preview img {
-  max-width: 220px;
-  max-height: 150px;
+  width: 200px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;       /* shows the same crop others will see */
   border-radius: 8px;
   border: 1px solid var(--line);
   display: block;
+  cursor: zoom-in;
+  background: var(--sand);
+}
+.preview-actions { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.5rem; }
+.btn-tiny { padding: 0.3rem 0.7rem; min-height: auto; font-size: 0.78rem; }
+
+/* Focal-point picker */
+.focus-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(51, 48, 43, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.focus-inner {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  max-width: 460px;
+  width: 100%;
+}
+.focus-inner h3 { margin: 0 0 0.3rem; }
+.focus-inner p { margin: 0 0 0.9rem; font-size: 0.85rem; }
+.focus-stage {
+  position: relative;
+  width: 100%;
+  max-height: 60vh;
+  overflow: hidden;
+  border-radius: 8px;
+  cursor: crosshair;
+  touch-action: none;
+  background: var(--sand);
+}
+.focus-stage img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+.focus-dot {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border: 3px solid var(--white);
+  border-radius: 50%;
+  background: rgba(201, 111, 74, 0.65);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.35);
+  pointer-events: none;
+}
+.focus-actions { display: flex; gap: 0.6rem; margin-top: 1rem; }
+
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  background: rgba(20, 18, 16, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; object-fit: contain; }
+.lightbox-close {
+  position: absolute;
+  top: calc(0.8rem + env(safe-area-inset-top));
+  right: 1rem;
+  background: rgba(255,255,255,0.15);
+  color: var(--white);
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 1.2rem;
+  cursor: pointer;
 }
 
 /* ---------- Profile & visit forms ---------- */

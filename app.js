@@ -416,7 +416,7 @@ function renderProfileHero() {
   hero.innerHTML = `
     <div class="hero-top">
       ${myFamily.photo_url
-        ? `<img class="hero-photo" src="${esc(myFamily.photo_url)}" alt="Your family photo">`
+        ? `<img class="hero-photo" src="${esc(myFamily.photo_url)}" alt="Your family photo" style="object-position:${myFamily.photo_focus_x ?? 50}% ${myFamily.photo_focus_y ?? 35}%">`
         : `<div class="hero-photo hero-photo-empty">🌿</div>`}
       <div>
         <h3>${esc(myFamily.family_name)}</h3>
@@ -584,7 +584,7 @@ function renderStream() {
     const { data: pub } = db.storage.from("gallery").getPublicUrl(ph.path);
     add(ph.created_at, ph.family_id, "🌅",
       `${who(ph.family_id)} shared a photo${ph.caption ? `: “${esc(snippet(ph.caption, 60))}”` : ""}`,
-      `<a href="${esc(pub.publicUrl)}" target="_blank" rel="noopener"><img class="stream-thumb" src="${esc(pub.publicUrl)}" alt="${esc(ph.caption || "Photo of Gratteri")}" loading="lazy"></a>`);
+      `<img class="stream-thumb" src="${esc(pub.publicUrl)}" alt="${esc(ph.caption || "Photo shared by " + famName(ph.family_id))}" loading="lazy" data-lightbox="${esc(pub.publicUrl)}" style="object-position:${ph.focus_x ?? 50}% ${ph.focus_y ?? 35}%">`);
   });
 
   messages.forEach((m) =>
@@ -842,7 +842,7 @@ function renderFamilies() {
         : `🧳 Next visit: ${fmtRange(next.start_date, next.end_date)}`;
     }
     return `<div class="family-card" style="border-top-color:${esc(fam.color)}">
-      ${fam.photo_url ? `<a href="${esc(fam.photo_url)}" target="_blank" rel="noopener"><img class="family-photo" src="${esc(fam.photo_url)}" alt="Photo of ${esc(fam.family_name)}" loading="lazy"></a>` : ""}
+      ${fam.photo_url ? `<img class="family-photo" src="${esc(fam.photo_url)}" alt="Photo of ${esc(fam.family_name)}" loading="lazy" data-lightbox="${esc(fam.photo_url)}" style="${coverStyle(fam.photo_focus_x, fam.photo_focus_y, fam.photo_w, fam.photo_h)}">` : ""}
       <h3>${esc(fam.family_name)}</h3>
       ${fam.home_town ? `<div class="home">📍 ${esc(fam.home_town)}</div>` : ""}
       ${fam.members ? `<div class="members">👨‍👩‍👧‍👦 ${esc(fam.members)}</div>` : ""}
@@ -1002,11 +1002,12 @@ function renderGallery() {
     const mine = myFamily && ph.family_id === myFamily.id;
     const { data: pub } = db.storage.from("gallery").getPublicUrl(ph.path);
     return `<figure class="gallery-item">
-      <a href="${esc(pub.publicUrl)}" target="_blank" rel="noopener"><img src="${esc(pub.publicUrl)}" alt="${esc(ph.caption || "Photo of Gratteri")}" loading="lazy"></a>
+      <img src="${esc(pub.publicUrl)}" alt="${esc(ph.caption || "Photo shared by " + famName(ph.family_id))}" loading="lazy" data-lightbox="${esc(pub.publicUrl)}" style="${coverStyle(ph.focus_x, ph.focus_y, ph.w, ph.h)}">
       <figcaption>
         ${ph.caption ? `<span>${esc(ph.caption)}</span>` : ""}
         <span class="muted">— ${esc(famName(ph.family_id))}</span>
-        ${mine ? `<button class="btn-danger-link" data-gallery-id="${ph.id}" data-gallery-path="${esc(ph.path)}" type="button">Remove</button>` : ""}
+        ${mine ? `<button class="btn-ghost btn-tiny" data-refocus-gallery="${ph.id}" data-refocus-url="${esc(pub.publicUrl)}" data-refocus-w="${ph.w || ""}" data-refocus-h="${ph.h || ""}" data-refocus-fx="${ph.focus_x ?? 50}" data-refocus-fy="${ph.focus_y ?? 35}" type="button">Reframe</button>
+        <button class="btn-danger-link" data-gallery-id="${ph.id}" data-gallery-path="${esc(ph.path)}" type="button">Remove</button>` : ""}
       </figcaption>
     </figure>`;
   }).join("") || `<p class="muted" style="text-align:center">No photos yet — share the first sunset! 🌅</p>`;
@@ -1028,28 +1029,41 @@ function renderBoard() {
   }).join("") || `<p class="muted" style="text-align:center">Nothing on the board yet — be the first to post!</p>`;
 }
 
+// ---------- photos: cropping helpers ----------
+// Every cropped rendering (cards, avatar, thumbnails) uses the stored focal
+// point so the subject is always in frame and centred, plus the known aspect
+// ratio so images never cause layout shift as they load.
+function coverStyle(fx, fy, w, h) {
+  const pos = `object-position:${fx ?? 50}% ${fy ?? 35}%`;
+  return h ? `${pos};aspect-ratio:${w}/${h}` : pos;
+}
+
 // ---------- photos: shared upload path ----------
 async function decodeToCanvas(file, maxDim) {
   const draw = (w, h, src) => {
     const scale = Math.min(1, maxDim / Math.max(w, h));
+    const cw = Math.max(1, Math.round(w * scale));
+    const ch = Math.max(1, Math.round(h * scale));
     const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(w * scale));
-    canvas.height = Math.max(1, Math.round(h * scale));
-    canvas.getContext("2d").drawImage(src, 0, 0, canvas.width, canvas.height);
-    return new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.85));
+    canvas.width = cw;
+    canvas.height = ch;
+    canvas.getContext("2d").drawImage(src, 0, 0, cw, ch);
+    return new Promise((res) => canvas.toBlob((b) => res(b && { blob: b, w: cw, h: ch }), "image/jpeg", 0.85));
   };
   try {
-    const bmp = await createImageBitmap(file);
+    // imageOrientation:from-image bakes in EXIF rotation, so phone photos
+    // taken sideways don't upload rotated
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
     return await draw(bmp.width, bmp.height, bmp);
-  } catch { /* fall through to <img> decoding, which handles some formats/sizes better */ }
+  } catch { /* fall through to <img> decoding, which applies orientation itself */ }
   try {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.src = url;
     await img.decode();
-    const blob = await draw(img.naturalWidth, img.naturalHeight, img);
+    const out = await draw(img.naturalWidth, img.naturalHeight, img);
     URL.revokeObjectURL(url);
-    return blob;
+    return out;
   } catch {
     return null; // browser genuinely can't read this format
   }
@@ -1068,47 +1082,114 @@ async function uploadPhoto(bucket, file, msgEl, { maxMB, maxDim, upsert = false,
     setMsg(msgEl, "Your browser can't read that photo format — please choose a JPEG or PNG (on iPhone: Settings → Camera → Formats → Most Compatible).", "error");
     return null;
   }
-  if (scaled.size > maxMB * 1024 * 1024) {
+  if (scaled.blob.size > maxMB * 1024 * 1024) {
     setMsg(msgEl, `That photo is still over ${maxMB} MB after shrinking — please pick a smaller one.`, "error");
     return null;
   }
   setMsg(msgEl, "Uploading…");
   const path = `${session.user.id}/${name || crypto.randomUUID()}.jpg`;
-  const { error } = await db.storage.from(bucket).upload(path, scaled, { upsert, contentType: "image/jpeg" });
+  const { error } = await db.storage.from(bucket).upload(path, scaled.blob, { upsert, contentType: "image/jpeg" });
   if (error) { setMsg(msgEl, error.message, "error"); return null; }
-  return path;
+  return { path, w: scaled.w, h: scaled.h };
 }
 
 $("pf-photo").addEventListener("change", async () => {
-  const file = $("pf-photo").files[0];
+  const input = $("pf-photo");
+  const file = input.files[0];
   const msg = $("photo-message");
   if (!file || !myFamily) return;
-  const path = await uploadPhoto("family-photos", file, msg, { maxMB: 5, maxDim: 1200, upsert: true, name: "photo" });
-  if (!path) return;
-  const { data: pub } = db.storage.from("family-photos").getPublicUrl(path);
-  const { error } = await db.from("families").update({ photo_url: `${pub.publicUrl}?v=${Date.now()}` }).eq("id", myFamily.id);
-  if (error) { setMsg(msg, error.message, "error"); return; }
-  setMsg(msg, "Photo updated ✓", "ok");
-  setTimeout(() => setMsg(msg, ""), 2500);
-  await safeRefresh();
+  input.disabled = true;
+  try {
+    const up = await uploadPhoto("family-photos", file, msg, { maxMB: 5, maxDim: 1200, upsert: true, name: "photo" });
+    if (!up) return;
+    const { data: pub } = db.storage.from("family-photos").getPublicUrl(up.path);
+    const url = `${pub.publicUrl}?v=${Date.now()}`;
+    const { error } = await db.from("families").update({
+      photo_url: url, photo_w: up.w, photo_h: up.h, photo_focus_x: 50, photo_focus_y: 35,
+    }).eq("id", myFamily.id);
+    if (error) { setMsg(msg, error.message, "error"); return; }
+    setMsg(msg, "Photo updated ✓", "ok");
+    setTimeout(() => setMsg(msg, ""), 2500);
+    await safeRefresh();
+    pickFocus(url, up.w, up.h, 50, 35, async (fx, fy) => {
+      await db.from("families").update({ photo_focus_x: fx, photo_focus_y: fy }).eq("id", myFamily.id);
+      await safeRefresh();
+    });
+  } finally {
+    input.disabled = false;
+    input.value = "";
+  }
 });
 
 $("gallery-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const msg = $("gallery-message");
   const file = $("gf-photo").files[0];
+  const btn = e.target.querySelector('button[type="submit"]');
   if (!file || !myFamily) return;
-  const path = await uploadPhoto("gallery", file, msg, { maxMB: 10, maxDim: 1600 });
-  if (!path) return;
-  const { error } = await db.from("gallery_photos").insert({
-    family_id: myFamily.id, path, caption: $("gf-caption").value.trim() || null,
-  });
-  if (error) { setMsg(msg, error.message, "error"); return; }
-  setMsg(msg, "");
-  $("gallery-form").reset();
-  toast("Photo shared 🌅");
-  await safeRefresh();
+  btn.disabled = true;
+  try {
+    const up = await uploadPhoto("gallery", file, msg, { maxMB: 10, maxDim: 1600 });
+    if (!up) return;
+    const { data: row, error } = await db.from("gallery_photos").insert({
+      family_id: myFamily.id, path: up.path, caption: $("gf-caption").value.trim() || null, w: up.w, h: up.h,
+    }).select().single();
+    if (error) { setMsg(msg, error.message, "error"); return; }
+    setMsg(msg, "");
+    $("gallery-form").reset();
+    toast("Photo shared 🌅");
+    await safeRefresh();
+    const { data: pub } = db.storage.from("gallery").getPublicUrl(up.path);
+    pickFocus(pub.publicUrl, up.w, up.h, 50, 35, async (fx, fy) => {
+      await db.from("gallery_photos").update({ focus_x: fx, focus_y: fy }).eq("id", row.id);
+      await safeRefresh();
+    });
+  } finally {
+    btn.disabled = false;
+  }
 });
+
+// ---------- focal-point picker ----------
+function pickFocus(imgUrl, w, h, fx, fy, onSave) {
+  const modal = $("focus-modal");
+  const img = $("focus-img");
+  const dot = $("focus-dot");
+  const stage = $("focus-stage");
+  let x = fx, y = fy;
+  img.src = imgUrl;
+  if (w && h) stage.style.aspectRatio = `${w}/${h}`;
+  const place = () => { dot.style.left = x + "%"; dot.style.top = y + "%"; };
+  place();
+  modal.classList.remove("hidden");
+
+  const setFromEvent = (ev) => {
+    const r = stage.getBoundingClientRect();
+    const pt = ev.touches ? ev.touches[0] : ev;
+    x = Math.round(Math.min(100, Math.max(0, ((pt.clientX - r.left) / r.width) * 100)));
+    y = Math.round(Math.min(100, Math.max(0, ((pt.clientY - r.top) / r.height) * 100)));
+    place();
+  };
+  stage.onclick = setFromEvent;
+  stage.ontouchstart = (ev) => { ev.preventDefault(); setFromEvent(ev); };
+
+  const close = () => {
+    modal.classList.add("hidden");
+    stage.onclick = stage.ontouchstart = null;
+    $("focus-save").onclick = $("focus-skip").onclick = null;
+  };
+  $("focus-save").onclick = async () => { close(); await onSave(x, y); toast("Framing saved ✓"); };
+  $("focus-skip").onclick = close;
+}
+
+// ---------- lightbox ----------
+function openLightbox(url, alt) {
+  $("lightbox-img").src = url;
+  $("lightbox-img").alt = alt || "";
+  $("lightbox").classList.remove("hidden");
+}
+$("lightbox").addEventListener("click", () => $("lightbox").classList.add("hidden"));
+$("lightbox-img").addEventListener("click", (e) => e.stopPropagation());
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("lightbox").classList.add("hidden"); });
 
 // ---------- delegated actions ----------
 // One listener handles every list-item button, so re-rendered cards never
@@ -1132,8 +1213,41 @@ async function toggleMembership(table, keyCol, id, isOn) {
 }
 
 document.addEventListener("click", async (e) => {
+  // photos: open in the in-app lightbox instead of navigating to a raw URL
+  if (e.target.dataset && e.target.dataset.lightbox) {
+    openLightbox(e.target.dataset.lightbox, e.target.alt);
+    return;
+  }
+
   const btn = e.target.closest("button");
   if (!btn) return;
+
+  // reframe an existing photo (re-open the focal picker)
+  if ("refocusFamily" in btn.dataset) {
+    const d = btn.dataset;
+    pickFocus(d.refocusUrl, +d.refocusW || null, +d.refocusH || null, +d.refocusFx, +d.refocusFy, async (fx, fy) => {
+      await db.from("families").update({ photo_focus_x: fx, photo_focus_y: fy }).eq("id", myFamily.id);
+      await safeRefresh();
+    });
+    return;
+  }
+  if (btn.dataset.refocusGallery) {
+    const d = btn.dataset;
+    pickFocus(d.refocusUrl, +d.refocusW || null, +d.refocusH || null, +d.refocusFx, +d.refocusFy, async (fx, fy) => {
+      await db.from("gallery_photos").update({ focus_x: fx, focus_y: fy }).eq("id", d.refocusGallery);
+      await safeRefresh();
+    });
+    return;
+  }
+  if (btn.id === "pf-remove-photo") {
+    if (!confirm("Remove your family photo?")) return;
+    await db.storage.from("family-photos").remove([`${session.user.id}/photo.jpg`]).catch(() => {});
+    const { error } = await db.from("families").update({ photo_url: null, photo_w: null, photo_h: null }).eq("id", myFamily.id);
+    if (error) { toast(error.message); return; }
+    toast("Photo removed");
+    await safeRefresh();
+    return;
+  }
 
   for (const [key, cfg] of Object.entries(DELETE_ACTIONS)) {
     if (btn.dataset[key]) {
@@ -1336,9 +1450,15 @@ function renderProfileForm() {
   const preview = $("pf-photo-preview");
   if (myFamily.photo_url) {
     preview.classList.remove("hidden");
-    preview.innerHTML = `<img src="${esc(myFamily.photo_url)}" alt="Your family photo">`;
+    preview.innerHTML =
+      `<img src="${esc(myFamily.photo_url)}" alt="Your family photo" data-lightbox="${esc(myFamily.photo_url)}" style="object-position:${myFamily.photo_focus_x ?? 50}% ${myFamily.photo_focus_y ?? 35}%">
+       <div class="preview-actions">
+         <button class="btn btn-ghost btn-tiny" data-refocus-family data-refocus-url="${esc(myFamily.photo_url)}" data-refocus-w="${myFamily.photo_w || ""}" data-refocus-h="${myFamily.photo_h || ""}" data-refocus-fx="${myFamily.photo_focus_x ?? 50}" data-refocus-fy="${myFamily.photo_focus_y ?? 35}" type="button">Reframe</button>
+         <button class="btn-danger-link" id="pf-remove-photo" type="button">Remove photo</button>
+       </div>`;
   } else {
     preview.classList.add("hidden");
+    preview.innerHTML = "";
   }
 
   $("pf-colors").innerHTML = PALETTE.map((c) =>
