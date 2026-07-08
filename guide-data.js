@@ -1,7 +1,7 @@
 /* ============================================================
    Gratteri Ambassadors — AI Tour Guide data
    Researched and verified via web sources, July 2026.
-   Categories: village | nature | towns | beach | food | daytrip
+   Categories: village | nature | towns | beach | food | wine | daytrip
    ============================================================ */
 
 window.EXPLORE_DATA = [
@@ -496,18 +496,6 @@ window.EXPLORE_DATA = [
     sources: ["https://www.visitsicily.info/en/castelbuono-in-the-madonie-mountains/"],
   },
   {
-    name: "Wine tasting at Abbazia Santa Anastasia",
-    emoji: "🍷",
-    category: "food",
-    distance: "about 30 min drive",
-    effort: "easy",
-    season: "year-round (book ahead; harvest is Sept-Oct)",
-    blurb: "A 12th-century Benedictine abbey turned biodynamic wine estate in the hills between Cefalù and Castelbuono — vineyard walks, cellar tours and long tasting lunches with sea views.",
-    details: "The estate covers around 400 hectares on the slopes above the coast near Castelbuono, with roughly 65 hectares of vines between 200 and 500 m altitude, and traces its winemaking legacy to Benedictine monks in the 1100s. It farms organically and biodynamically (Demeter-certified) — flagship reds like Litra sit alongside local varieties such as Nero d'Avola — and runs guided visits with vineyard walks, an explanation of biodynamics, and sommelier-led tastings, often paired with a light Sicilian lunch. There's also a relais (hotel, pool and restaurant) on site if the parents fancy a treat night. It's one of the closest serious wineries to Gratteri, making it an ideal lazy half-day. Book tastings in advance by email or through wine-tourism platforms rather than turning up; harvest season visits are especially atmospheric.",
-    maps_query: "Abbazia Santa Anastasia winery Castelbuono",
-    sources: ["https://www.abbaziasantanastasia.com/en/", "https://www.winerytastingsicily.com/producer/abbazia-santa-anastasia-castelbuono-palermo-cefalu/"],
-  },
-  {
     name: "Castelbuono food trail: Fiasconaro, manna & Madonie cheese",
     emoji: "🧁",
     category: "food",
@@ -518,6 +506,69 @@ window.EXPLORE_DATA = [
     details: "Start in Piazza Margherita at Fiasconaro, the family pasticceria founded in 1953 whose naturally-leavened panettone and colomba are now exported worldwide — sit down for cannoli, cassata, sfince with ricotta and a gelato, and buy an 'Oro di Manna' panettone to take home. Manna is the local marvel: the crystallised sap of manna ash trees, tapped only between Castelbuono and Pollina in late summer, forming white 'cannoli' stalactites on threads — look for manna sweets and spreads in town shops. Hunt out provola delle Madonie, a Slow Food Presidium flask-shaped cow's-milk cheese from semi-wild mountain herds, in local delis and on trattoria boards. Then visit the 1317 Ventimiglia castle and the Matrice Vecchia to walk it all off. In Cefalù itself, locals rate the family-run pasticcerias near the station for cannoli — ask an ambassador for their favourite and add it to the tips!",
     maps_query: "Pasticceria Fiasconaro Castelbuono",
     sources: ["https://fiasconaro.com/en/manna-our-treasure/", "https://www.fondazioneslowfood.com/en/slow-food-presidia/madonie-provola/"],
+  },
+
+  {
+    name: "Dinner on the Cefalù waterfront",
+    emoji: "🦑",
+    category: "food",
+    distance: "25 min drive",
+    effort: null,
+    season: "year-round (terraces best May-Oct)",
+    blurb: "The classic Cefalù evening: fresh-off-the-boat seafood at a table almost in the sea, with the old town glowing behind you.",
+    details: "Cefalù's old town is thick with seafood restaurants; a few long-standing names to start from (always check current openings and reviews, and book in summer): Al Porticciolo down by the old port, with a terrace on the cliff over the water; La Botte, a decades-old family institution near the cathedral doing creative Sicilian cooking; and Locanda del Marinaio, an unpretentious spot that's earned serious recognition. Order what's local and seasonal — swordfish (pesce spada), red prawns (gamberi rossi di Mazara), sea urchin or cuttlefish-ink pasta, and whatever the day's catch is. Aim for a table booked at sunset so the meal starts with the light on the rooftops. This is the one splurge dinner most families do at least once a stay. Which of these is best this year is exactly what the ambassadors' votes and tips are for — thumbs them up and add your own find.",
+    maps_query: "seafood restaurant Cefalù old town",
+    sources: ["https://www.tripadvisor.com/Restaurants-g194726-c33-Cefalu_Province_of_Palermo_Sicily.html", "https://www.alporticcioloristorante.com/en-gb/the-restaurant"],
+  },
+  {
+    name: "Aperitivo & the evening passeggiata",
+    emoji: "🍹",
+    category: "food",
+    distance: "in town, or Cefalù 25 min",
+    effort: null,
+    season: "year-round (liveliest in summer)",
+    blurb: "The most Sicilian thing you'll do all trip costs the price of a spritz: dress up a little, drift through the lanes at dusk, and watch the whole village do the same.",
+    details: "As the heat lifts, Sicilian towns come out to walk — the passeggiata — and the ritual pairs perfectly with an aperitivo. In Gratteri, that's a drink in the piazza as the swifts wheel overhead; in Cefalù, a table on Corso Ruggero or by the sea with a Spritz, a glass of local white, or a Sicilian classic like Amaro Averna (made just inland at Caltanissetta) over ice. Aperitivi usually come with olives, crisps, and little bites. Go around 7-8pm, let the kids run in the square, and treat it as the warm-up to a late Sicilian dinner. It costs almost nothing and is the fastest way to feel like a local rather than a tourist. Bonus: it's the natural moment to bump into other ambassadors who are in town — check the calendar first.",
+    maps_query: "Corso Ruggero Cefalù",
+    sources: ["https://en.wikipedia.org/wiki/Passeggiata"],
+  },
+
+  // ---------- Wine & vineyards ----------
+  {
+    name: "The wines of the Madonie & Contea di Sclafani",
+    emoji: "🍇",
+    category: "wine",
+    distance: "the hills around you",
+    effort: null,
+    season: "year-round",
+    blurb: "A quick field guide to what's in the glass here — so you can shop and order like you know the region, because you now do.",
+    details: "Your corner of Sicily sits inside the Contea di Sclafani DOC, a large appellation spanning the inland hills around the Madonie. Reds lean on Nero d'Avola (rich, dark-fruited, the island's signature) and the more local, structured Perricone; whites on Catarratto, Inzolia and Grillo — bright, citrusy, made for seafood. Higher-altitude Madonie vineyards give fresher, more elegant wines than the Sicilian stereotype of big and jammy. For a splurge, look for Etna wines (Nerello Mascalese reds, Carricante whites) from the volcano further east, increasingly on local lists. When ordering, 'un rosso del posto' or 'un bianco locale' will get you something honest and inexpensive; in shops, ask for Contea di Sclafani or Sicilia DOC bottles. Two nearby estates below are worth a proper visit.",
+    maps_query: "Contea di Sclafani wine region",
+    sources: ["https://en.wikipedia.org/wiki/Contea_di_Sclafani_DOC", "https://en.wikipedia.org/wiki/Sicilian_wine"],
+  },
+  {
+    name: "Tasca d'Almerita — Tenuta Regaleali",
+    emoji: "🍷",
+    category: "wine",
+    distance: "about 1h15 drive (Sclafani Bagni)",
+    effort: null,
+    season: "year-round (book ahead; harvest Aug-Oct)",
+    blurb: "One of Sicily's most storied wine estates, on the inland edge of your own DOC — vineyard tours, tastings, a cooking school, and long lunches among the hills.",
+    details: "The Tasca d'Almerita family has made wine at Tenuta Regaleali near Sclafani Bagni since 1830, on a vast estate in the rolling hills south of the Madonie — the heart of the Contea di Sclafani. It's the birthplace of benchmark Sicilian wines like the Rosso del Conte, and the estate is famous well beyond wine: its historic cooking school (associated with the late Anna Tasca Lanza) helped put Sicilian home cooking on the world map. Visits typically combine a vineyard and cellar tour with a seated tasting, and can extend to a full lunch of estate produce — book well ahead through the estate. It's a longer drive than the nearer wineries but a genuine bucket-list Sicilian wine day for interested parents (arrange it as a grown-ups' outing). Pair the route with a stop in one of the inland borghi. Always confirm visit options and times directly before setting out.",
+    maps_query: "Tenuta Regaleali Tasca d'Almerita Sclafani Bagni",
+    sources: ["https://en.wikipedia.org/wiki/Tasca_d%27Almerita", "https://www.tascadalmerita.it/en/tenute/regaleali/"],
+  },
+  {
+    name: "Abbazia Santa Anastasia — vineyard & tasting",
+    emoji: "🍷",
+    category: "wine",
+    distance: "about 30 min drive",
+    effort: null,
+    season: "year-round (book ahead; harvest Sept-Oct)",
+    blurb: "A 12th-century Benedictine abbey turned biodynamic wine estate in the hills near Castelbuono — the closest serious winery to Gratteri, with vineyard walks and tasting lunches over the sea.",
+    details: "On the slopes above the coast near Castelbuono, this ~400-hectare estate has around 65 hectares of vines between 200 and 500 m, and traces its winemaking back to Benedictine monks in the 1100s. It farms organically and biodynamically (Demeter-certified) — flagship reds like Litra sit alongside local varieties such as Nero d'Avola — and runs guided visits with vineyard walks, an explanation of biodynamics, and sommelier-led tastings, often paired with a light Sicilian lunch. There's a relais on site (hotel, pool, restaurant) if the parents fancy a treat night. Being only about half an hour away, it's the easiest winery half-day from Gratteri. Book tastings in advance by email or a wine-tourism platform rather than turning up; harvest-season visits are especially atmospheric.",
+    maps_query: "Abbazia Santa Anastasia winery Castelbuono",
+    sources: ["https://www.abbaziasantanastasia.com/en/", "https://www.winerytastingsicily.com/producer/abbazia-santa-anastasia-castelbuono-palermo-cefalu/"],
   },
 
   // ---------- Day trips ----------
