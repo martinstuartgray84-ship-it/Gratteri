@@ -30,6 +30,8 @@
         <p class="auth-tagline">The shared calendar for friends of Gratteri, Sicily.<br>See who's in town, and when.</p>
       </div>
 
+      <div id="invite-banner" class="invite-banner hidden"></div>
+
       <div class="auth-tabs">
         <button id="tab-login" class="auth-tab active" type="button">Log in</button>
         <button id="tab-signup" class="auth-tab" type="button">Sign up</button>
@@ -284,14 +286,28 @@
 
         <div class="panel">
           <h3>Household logins</h3>
-          <p class="muted" id="family-code-line"></p>
-          <form id="join-form" class="visit-form">
-            <label class="visit-note-label">Have another family's code?
-              <input type="text" id="jf-code" maxlength="12" placeholder="e.g. GRT-7K2M" autocomplete="off">
-            </label>
-            <button type="submit" class="btn btn-primary">Join that family</button>
-          </form>
-          <span id="join-message" class="form-message"></span>
+          <p class="muted">Add your partner or family so you share one entry on the calendar, with your own logins. Send them this invite — they just tap it and sign up, no code to type.</p>
+          <div class="invite-row">
+            <button id="btn-invite" class="btn btn-primary" type="button">📨 Invite someone to our family</button>
+            <button id="btn-invite-wa" class="btn btn-ghost" type="button">Share on WhatsApp 💬</button>
+          </div>
+          <div id="invite-link-box" class="invite-link-box hidden">
+            <input type="text" id="invite-link" readonly>
+            <button id="btn-copy-invite" class="btn btn-ghost" type="button">Copy</button>
+          </div>
+          <span id="invite-message" class="form-message"></span>
+
+          <details class="join-details">
+            <summary>Joining another family instead?</summary>
+            <p class="muted">If your household already has an entry here, enter their family code (or open their invite link) and your login will merge into it.</p>
+            <form id="join-form" class="visit-form">
+              <label class="visit-note-label">Family code
+                <input type="text" id="jf-code" maxlength="12" placeholder="e.g. GRT-7K2M" autocomplete="off">
+              </label>
+              <button type="submit" class="btn btn-primary">Join that family</button>
+            </form>
+            <span id="join-message" class="form-message"></span>
+          </details>
         </div>
       </section>
     </main>

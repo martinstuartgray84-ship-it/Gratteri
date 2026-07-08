@@ -310,6 +310,20 @@ async function enterApp() {
   $("app").classList.remove("hidden");
   await ensureMyFamily();
   await refresh();
+  // arrived via an invite link while already logged in → offer to join that family
+  const code = pendingInviteCode();
+  if (code && myFamily && (myFamily.invite_code || "").toUpperCase() !== code.toUpperCase()) {
+    clearInviteParam();
+    await doJoin(code, null);
+  }
+}
+
+function pendingInviteCode() {
+  return new URLSearchParams(window.location.search).get("join");
+}
+
+function clearInviteParam() {
+  history.replaceState(null, "", window.location.pathname);
 }
 
 // ---------- navigation ----------
@@ -433,22 +447,54 @@ function renderProfileHero() {
       <div class="stat-tile"><span>${galleryPhotos.filter((p) => p.family_id === myFamily.id).length}</span><small>photos shared</small></div>
     </div>`;
 
-  $("family-code-line").textContent =
-    `Your family code is ${myFamily.invite_code || "—"} — share it with your household so their login joins ${myFamily.family_name} instead of creating a new family. They can enter it when signing up, or below after.`;
+  $("invite-link").value = inviteLink();
+}
+
+function inviteLink() {
+  return myFamily ? `${SITE_URL}?join=${encodeURIComponent(myFamily.invite_code || "")}` : SITE_URL;
+}
+
+function inviteText() {
+  return `Join our family "${myFamily.family_name}" on the Gratteri Ambassadors site 🌿 — tap to sign up and we'll share one entry on the village calendar:\n${inviteLink()}`;
+}
+
+$("btn-invite").addEventListener("click", async () => {
+  const msg = $("invite-message");
+  if (navigator.share) {
+    try { await navigator.share({ title: "Gratteri Ambassadors", text: inviteText(), url: inviteLink() }); return; }
+    catch { /* user cancelled or unsupported — fall back to showing the link */ }
+  }
+  $("invite-link-box").classList.remove("hidden");
+  $("invite-link").value = inviteLink();
+  $("invite-link").select();
+  setMsg(msg, "Copy this link and send it to your household.", "ok");
+});
+
+$("btn-invite-wa").addEventListener("click", () => {
+  window.open(`https://wa.me/?text=${encodeURIComponent(inviteText())}`, "_blank", "noopener");
+});
+
+$("btn-copy-invite").addEventListener("click", async () => {
+  const msg = $("invite-message");
+  try { await navigator.clipboard.writeText(inviteLink()); setMsg(msg, "Link copied ✓", "ok"); }
+  catch { $("invite-link").select(); setMsg(msg, "Select the link above and copy it.", "ok"); }
+  setTimeout(() => setMsg(msg, ""), 2500);
+});
+
+async function doJoin(code, msgEl) {
+  if (!confirm(`Join the family with code ${code.toUpperCase()}? Your login and everything you've posted will move into that family, and your current family entry will be retired.`)) return;
+  const { error } = await db.rpc("join_family", { code });
+  if (error) { if (msgEl) setMsg(msgEl, error.message, "error"); else toast(error.message); return; }
+  if (msgEl) setMsg(msgEl, "");
+  $("join-form").reset();
+  toast("Welcome to your family! 🏡");
+  await safeRefresh();
 }
 
 $("join-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const msg = $("join-message");
   const code = $("jf-code").value.trim();
-  if (!code) return;
-  if (!confirm(`Join the family with code ${code.toUpperCase()}? Your login and everything you've posted will move into that family, and your current family entry will be retired.`)) return;
-  const { error } = await db.rpc("join_family", { code });
-  if (error) { setMsg(msg, error.message, "error"); return; }
-  setMsg(msg, "");
-  $("join-form").reset();
-  toast("Welcome to your family! 🏡");
-  await safeRefresh();
+  if (code) await doJoin(code, $("join-message"));
 });
 
 // ---------- render: village stats + Unwrapped ----------
@@ -1519,8 +1565,21 @@ renderExplore(); // static data — render once at load
 
 (async () => {
   const { data } = await db.auth.getSession();
+  const code = pendingInviteCode();
   if (!data.session) {
     $("auth-screen").classList.remove("hidden");
+    if (code) {
+      // pre-fill the signup form so the invitee never has to type a code
+      setAuthMode("signup");
+      $("auth-family-code").value = code;
+      const banner = $("invite-banner");
+      banner.classList.remove("hidden");
+      banner.innerHTML = `🌿 You've been invited to join a family. <strong>Sign up</strong> below and you'll share their entry — or <button type="button" class="link-btn" id="invite-decline">start your own family instead</button>.`;
+      $("invite-decline").addEventListener("click", () => {
+        $("auth-family-code").value = "";
+        banner.classList.add("hidden");
+      });
+    }
   }
   // onAuthStateChange fires with INITIAL_SESSION and handles the rest
 })();
