@@ -645,3 +645,86 @@ window.EXPLORE_DATA = [
     sources: ["https://en.wikipedia.org/wiki/Monreale_Cathedral", "https://wearepalermo.com/news/visit-cathedral-of-monreale/"],
   },
 ];
+
+/* ---------- Local directory: restaurants, cafés & food shops ----------
+   Real, web-documented businesses (researched July 2026). Descriptions
+   reflect what sources say; hours/quality change, so check ahead — and
+   the ambassadors' 👍/👎 votes are the living rating. */
+(function () {
+  const KIND = {
+    restaurant: "🍽️", trattoria: "🍝", seafood: "🦑", pizzeria: "🍕",
+    "fine dining": "⭐", cafe: "☕", bar: "🍸", agriturismo: "🚜",
+    gelateria: "🍨", pasticceria: "🧁", bakery: "🥖", butcher: "🥩",
+    deli: "🧀", producer: "🫙", market: "🧺",
+  };
+  const DIST = {
+    "Gratteri": "in Gratteri", "Cefalù": "Cefalù · 25 min",
+    "Sant'Ambrogio": "Sant'Ambrogio · 30 min", "Castelbuono": "Castelbuono · 35 min",
+    "Isnello": "Isnello · 15 min", "Collesano": "Collesano · 20 min",
+    "Pollina": "Pollina · 35 min", "Gibilmanna": "Gibilmanna · 15 min",
+    "Campofelice di Roccella": "Campofelice · 20 min", "Lascari": "Lascari · 20 min",
+    "Cerda": "Cerda · 30 min",
+  };
+  const EAT = [
+    ["Cortile Pepe", "fine dining", "Cefalù", "Fine dining steps from the Duomo, in the Michelin Guide — modern land-and-sea Sicilian tasting menus and a ~400-label wine list.", "Cortile Pepe Cefalù", "https://guide.michelin.com/us/en/sicilia/cefal/restaurant/cortile-pepe"],
+    ["Qualia", "fine dining", "Cefalù", "Michelin Guide restaurant with exposed brick and a little alfresco space — contemporary Sicilian with fresh fish, Mazara prawn tartare, barbecued octopus.", "Qualia ristorante Cefalù", "https://guide.michelin.com/us/en/sicilia/cefal/restaurant/qualia"],
+    ["Le Chat Noir", "restaurant", "Cefalù", "Family-run (the Natoli family) in a late-1500s building near the cathedral — traditional Sicilian cooking with local zero-km produce.", "Ristorante Le Chat Noir Cefalù", "https://ristorantelechatnoir.it/en/le-chat-noir-2/"],
+    ["La Botte di Fiduccia", "trattoria", "Cefalù", "Long-established family trattoria near the cathedral under chef Giuseppe Fiduccia — cuttlefish-ink couscous, seafood risotto, whitewashed stone room.", "Trattoria La Botte Cefalù", "https://www.cefalu.website/en/restaurants/la-botte/itm/187/"],
+    ["Camilleri", "trattoria", "Cefalù", "Historic-centre trattoria — tuna carpaccio with almond and orange, grilled sea bream, taglioline with sardines, local wines.", "Camilleri Ristorante Trattoria Cefalù", "https://www.tripadvisor.com/Restaurant_Review-g194726-d17630379-Reviews-Camilleri_Ristorante_Trattoria_Cefalu-Cefalu_Province_of_Palermo_Sicily.html"],
+    ["Il Carretto", "trattoria", "Cefalù", "Quiet side-street trattoria with vaulted brick ceilings — Sicilian classics (pasta alla Norma, spaghetti alle vongole, grilled swordfish) at fair prices; pork-free menu.", "Ristorante Il Carretto Cefalù", "https://www.tripadvisor.com/Restaurant_Review-g194726-d4766156-Reviews-Il_Carretto-Cefalu_Province_of_Palermo_Sicily.html"],
+    ["Al Porticciolo", "seafood", "Cefalù", "Seafood and pizza by the old port with a terrace on the cliff over the sea — molluscs, crustaceans, couscous and wood-fired pizza.", "Al Porticciolo Cefalù", "https://www.alporticcioloristorante.com/en-gb/the-restaurant"],
+    ["Lo Scoglio Ubriaco", "seafood", "Cefalù", "On the rocks at the edge of the old town, 30+ years — house tagliatelle in mussel-cream sauce, farfalle with bottarga, sea-view terrace above the port.", "Lo Scoglio Ubriaco Cefalù", "https://www.frommers.com/destinations/cefalu/restaurants/lo-scoglio-ubriaco/"],
+    ["Il Covo del Pirata", "seafood", "Cefalù", "Seafront spot with a terrace over the beach and port — paccheri with tuna, spaghetti alle vongole, mixed grilled fish.", "Il Covo del Pirata Cefalù", "https://www.tripadvisor.com/Restaurant_Review-g194726-d1979302-Reviews-Il_Covo_del_Pirata-Cefalu_Province_of_Palermo_Sicily.html"],
+    ["Sutt'a Ràvia", "seafood", "Cefalù", "Blue-and-white trattoria metres from the beach, an offshoot of the neighbouring fish market — very fresh fish, caponata, spaghetti alle vongole.", "Sutt'a Ravia Cefalù", "https://www.lonelyplanet.com/italy/sicily/cefalu/restaurants/sutt-a-ravia/a/poi-eat/1623928/360016"],
+    ["Ostaria del Duomo", "restaurant", "Cefalù", "Open since 1979 at the foot of the Norman cathedral with a covered terrace on Piazza Duomo — seafood, homemade pistachio pasta, Sicilian desserts.", "Ostaria del Duomo Cefalù", "https://www.tripadvisor.com/Restaurant_Review-g194726-d2318455-Reviews-Ostaria_del_Duomo-Cefalu_Province_of_Palermo_Sicily.html"],
+    ["Kentia al Trappitu", "restaurant", "Cefalù", "Clifftop terrace with sunset sea views — fritto misto, pasta alla Norma, pistachio pasta, and a big Sicilian wine list.", "Ristorante Kentia al Trappitu Cefalù", "https://www.tripadvisor.com/Restaurant_Review-g194726-d1576200-Reviews-Ristorante_Kentia_al_Trappitu-Cefalu_Province_of_Palermo_Sicily.html"],
+    ["Enoteca Le Petit Tonneau", "cafe", "Cefalù", "Tiny old-town wine bar near the medieval wash-house with three terrace tables famed for sunset over the marina — local wines, cold cuts, sfincione. Book ahead.", "Enoteca Le Petit Tonneau Cefalù", "https://cefalu.it/en/magazine-en/experience-en/le-petit-tonneau-a-glimpse-of-the-world/"],
+    ["Bar Duomo — Serio 1952", "cafe", "Cefalù", "Historic café on Piazza Duomo facing the cathedral (since 1952) — cassata, cannoli, frutta martorana, gelato and granita con brioche.", "Bar Duomo Piazza Duomo Cefalù", "https://www.duomo1952.com/"],
+    ["Pizzeria White Horse", "pizzeria", "Cefalù", "Popular pizzeria known for thin-crust pizzas and attentive service; bruschette and desserts also singled out by diners.", "Pizzeria White Horse Cefalù", "https://www.tripadvisor.com/Restaurant_Review-g194726-d3814982-Reviews-Pizzeria_White_Horse-Cefalu_Province_of_Palermo_Sicily.html"],
+    ["Trattoria Sant'Ambrogio", "trattoria", "Sant'Ambrogio", "Small family trattoria in the fishing hamlet a few km from Cefalù, terrace over the sea — mostly local catch, red-prawn tartare with buffalo mozzarella. Book ahead.", "Trattoria Sant'Ambrogio Cefalù", "https://www.tripadvisor.com/Restaurant_Review-g194726-d15128502-Reviews-Trattoria_Sant_Ambrogio-Cefalu_Province_of_Palermo_Sicily.html"],
+    ["Ristorante Dimora dei Frati", "restaurant", "Gratteri", "Family-run in the village core with a terrace and bar, rooted in Sicilian tradition.", "Dimora dei Frati Gratteri", "https://www.visitgratteri.com/it/ristorante-dimora-dei-frati/"],
+    ["Al Casato dei Ventimiglia", "pizzeria", "Gratteri", "Village restaurant-pizzeria, a local reference point for meat, fish, pizza and Sicilian specialities.", "Al Casato dei Ventimiglia Gratteri", "https://www.tripadvisor.com/Restaurants-g1463398-c26-Gratteri_Province_of_Palermo_Sicily.html"],
+    ["La Villa", "restaurant", "Gratteri", "Casual spot for pizza and pasta with outdoor seating, well liked for value.", "La Villa Gratteri", "https://www.tripadvisor.com/Restaurant_Review-g1463398-d2531060-Reviews-La_Villa-Gratteri_Province_of_Palermo_Sicily.html"],
+    ["Gratteri Resort restaurant", "restaurant", "Gratteri", "Hotel restaurant of Mediterranean cuisine — Madonie tradition with new touches and a broad Madonie/Sicilian wine list.", "Gratteri Resort restaurant", "https://www.gratteriresort.com/en/our-restaurant/"],
+    ["Case Risino", "agriturismo", "Gratteri", "Hilltop countryside agriturismo in the Rapputi area with sea views toward Lascari, cooking seasonal local produce.", "Case Risino Gratteri", "https://www.caserisino.it/"],
+    ["Sesto 6 Senso", "restaurant", "Castelbuono", "Restaurant-pizzeria near Fontana Venere Ciprea in the old centre — local and Mediterranean dishes at friendly prices.", "Sesto 6 Senso Castelbuono", "https://ristorantiinsicilia.it/dove-mangiare-a-castelbuono/"],
+    ["Trattoria La Lanterna", "trattoria", "Castelbuono", "Cosy trattoria with a fireplace — praised for mixed antipasti, grilled mushrooms and generous pasta.", "Trattoria La Lanterna Castelbuono", "https://wanderlog.com/list/geoCategory/341229/best-italian-restaurants-in-castelbuono"],
+    ["U Trappitu", "restaurant", "Castelbuono", "Restaurant-pizzeria in the historic centre — typical Madonie cooking and Mediterranean fish at competitive prices.", "U Trappitu Castelbuono", "https://ristorantiinsicilia.it/dove-mangiare-a-castelbuono/"],
+    ["Hostaria Cycas", "restaurant", "Castelbuono", "In an ancient building with a courtyard holding one of the Madonie's oldest cycas — fresh pasta, homemade bread, seasonal mushrooms, local meats, wood-fired pizza.", "Hostaria Cycas Castelbuono", "https://www.hostariacycas.net/"],
+    ["Agriturismo A Rametta", "agriturismo", "Castelbuono", "Countryside farm restaurant with abundant dishes from km-0 and own-production ingredients.", "Agriturismo A Rametta Castelbuono", "https://ristorantiinsicilia.it/dove-mangiare-a-castelbuono/"],
+    ["Ristorante Pizzeria La Brace", "pizzeria", "Isnello", "Renowned for ancient-grain, 72-hour-fermented pizza plus Madonie cuisine, tasting antipasti and local wines with mountain views.", "La Brace Isnello", "https://www.storienogastronomiche.it/la-brace-isnello-pa-grande-pizza-prelibatezze-delle-madonie/"],
+    ["Targa Food", "pizzeria", "Collesano", "Restaurant-pizzeria in the heart of the Madonie and Targa Florio country — Sicilian dishes in a welcoming setting.", "Targa Food Collesano", "https://www.ristorantepizzeriatargafood.it/"],
+    ["Trattoria Carricaturi", "trattoria", "Collesano", "Trattoria on Via Mazzini serving typical Madonie cuisine.", "Trattoria Carricaturi Collesano", "https://www.sluurpy.it/collesano/ristorante/172073/trattoria-carricaturi"],
+    ["Casale Drinzi", "agriturismo", "Collesano", "Farm restaurant deep in the Madonie park — revisited tradition, quality ingredients, warm service.", "Casale Drinzi Collesano", "https://www.sluurpy.it/collesano/ristorante/28449/casale-drinzi"],
+    ["Arrhais", "seafood", "Pollina", "Seafood trattoria at Finale di Pollina with panoramic outdoor seating — linguine with tuna and wild fennel, spaghetti with sea urchin, grilled fish.", "Arrhais Finale di Pollina", "https://www.arrhais.com/wp/"],
+    ["La Strummula (Borgo di Ciaùla)", "fine dining", "Pollina", "Restaurant of the Borgo di Ciaùla hotel with chef Santino Corso (ex-Charleston, Mondello) — refined seafood plates.", "La Strummula Borgo di Ciaula Pollina", "https://www.gamberorosso.it/notizie/ristoranti/mangiare-in-sicilia-da-palermo-a-finale-di-pollina/"],
+    ["Bastione & Costanza", "restaurant", "Gibilmanna", "Gastro-cultural hub in the former Capuchin infirmary — pizzeria and restaurant focused on local territory and sustainability.", "Bastione Costanza Gibilmanna", "https://www.tripadvisor.com/RestaurantsNear-g194726-d3214960-Santuario_Gibilmanna-Cefalu_Province_of_Palermo_Sicily.html"],
+    ["Ristorante Mogavero", "restaurant", "Gibilmanna", "Near the Gibilmanna sanctuary with outdoor seating amid nature — abundant, well-regarded cooking and cordial hospitality.", "Ristorante Mogavero Gibilmanna", "https://restaurantguru.it/Ristorante-Mogavero-di-Gibilmanna-Cefalu"],
+    ["Mareluna Village", "restaurant", "Campofelice di Roccella", "Restaurant in a seaside tourist village steps from the sand, cooking Sicilian products and recipes.", "Mareluna Village Campofelice di Roccella", "https://www.thefork.it/ristorante/mareluna-village-r213027"],
+    ["Agriturismo Le Campanelle", "agriturismo", "Lascari", "Agriturismo restaurant with pool between Cefalù and Campofelice — Sicilian cooking from fresh farm ingredients, daily-changing menu.", "Agriturismo Le Campanelle Lascari", "https://www.aziendacampanelle.com/"],
+  ];
+  const SHOP = [
+    ["Panificio San Giacomo", "bakery", "Gratteri", "The village bakery on Corso Umberto I, listed in Gratteri's own commercial register.", "Panificio San Giacomo Gratteri", "http://www.comune.gratteri.pa.it/zf/index.php/esercizi-commerciali/"],
+    ["Macelleria Occorso", "butcher", "Gratteri", "Village butcher-and-grocery on Corso Umberto in Gratteri, in the municipal business directory.", "Macelleria Occorso Gratteri", "http://www.comune.gratteri.pa.it/zf/index.php/esercizi-commerciali/"],
+    ["Gelateria Pasticceria Cangelosi", "pasticceria", "Cefalù", "Family shop on Via Aldo Moro noted for fresh-ricotta cannoli and crisp Sicilian pastries.", "Gelateria Pasticceria Cangelosi Cefalù", "https://gelateria-pasticceria-cangelosi.res-menu.net/"],
+    ["Pasticceria Tentazioni", "pasticceria", "Cefalù", "Sea-view bar-pasticceria (Giuseppe Serio) — cannoli filled to order with fine ricotta, hand-decorated cassate.", "Pasticceria Tentazioni Cefalù", "https://www.pasticceriatentazionicefalu.com/"],
+    ["Mon Chou-Chou", "gelateria", "Cefalù", "Gelateria-pasticceria on Via Giglio, a Gambero Rosso 'Due Coni' winner using Sicilian raw materials, with gluten-free and vegan options.", "Mon Chou-Chou Cefalù", "https://www.balarm.it/news/cefalu-sul-podio-del-gelato-mon-chou-chou-conquista-i-due-coni-del-gambero-rosso-167709"],
+    ["Sapore di Sale", "gelateria", "Cefalù", "Artisan gelateria on Corso Ruggero known for flavours like white chocolate with Nebrodi lemon and sea salt; often a queue.", "Sapore di Sale Gelateria Cefalù", "https://yeasteria.it/sapore-di-sale-gelateria-cefalu/"],
+    ["Squagghio", "gelateria", "Cefalù", "Historic-centre gelateria praised for creative combos (pistachio-ricotta) and vegan options.", "Squagghio gelateria Cefalù", "https://wanderlog.com/list/geoCategory/49720/places-to-have-best-gelato-in-cefalu"],
+    ["Panificio Purpora", "bakery", "Cefalù", "Small bakery on Corso Ruggero near the Duomo, good for pizza, focaccia and baked goods.", "Panificio Purpora Cefalù", "https://www.tripadvisor.com/Restaurant_Review-g194726-d7161025-Reviews-Panificio_Purpora-Cefalu_Province_of_Palermo_Sicily.html"],
+    ["Non Solo Pane", "bakery", "Cefalù", "Artisan bakery-rosticceria on Via Spinuzza — sfincione, arancine and biscuits from quality ingredients.", "Non Solo Pane Cefalù", "https://trovaweb.net/panificio-rosticceria-non-solo-pane-cefalu-palermo/"],
+    ["La Cefalù Nostrana", "deli", "Cefalù", "Mini-market and salumeria stocking quality cured meats, artisan cheeses, local wines and regional products.", "La Cefalù Nostrana Cefalù", "https://www.lacefalunostrana.com/"],
+    ["Bottega del Sole", "deli", "Cefalù", "Food shop selling bread, typical biscuits and sweets, Sicilian salumi and cheeses alongside local products.", "Bottega del Sole Cefalù", "https://www.facebook.com/people/Bottega-del-Sole-Cefal%C3%B9/100054865454967/"],
+    ["Macellerie Cusimano", "butcher", "Castelbuono", "Butcher on Piazza San Francesco — Madonie meats, salumi, cheeses and oil from small local producers.", "Macellerie Cusimano Castelbuono", "https://www.macelleriecusimano.it/"],
+    ["Pina Forti — Pane e Biscotti", "bakery", "Castelbuono", "Three-generation bakery-biscottificio on Via Dante — bread, sweets and biscuits made daily in the traditional way.", "Pina Forti Castelbuono", "https://www.pinaforti.it/"],
+    ["Antico Forno Prestianni", "bakery", "Castelbuono", "Traditional bakery on Via Umberto I in the town centre.", "Antico Forno Prestianni Castelbuono", "https://www.paginegialle.it/castelbuono-pa/antico-forno-prestianni-g-cira-g"],
+    ["Caseificio San Nicola", "producer", "Castelbuono", "Family Madonie dairy making fresh and aged cheeses worked by hand.", "Caseificio San Nicola Castelbuono", "https://www.caseificiosannicola.com/"],
+    ["Consorzio Manna Madonita", "producer", "Castelbuono", "Producers of manna — the sweet ash-tree sap still harvested only in Castelbuono and Pollina.", "Consorzio Manna Madonita Castelbuono", "https://www.facebook.com/mannamadonita/"],
+    ["Cappadonia Gelati", "gelateria", "Cerda", "Madonie gelateria (lab in Cerda) with territory-driven flavours including Castelbuono manna; multi-year Gambero Rosso 'Tre Coni'.", "Cappadonia Gelati Cerda", "https://www.cappadonia.it/"],
+  ];
+  const toEntry = (cat) => ([name, kind, town, known, maps, src]) => ({
+    name, emoji: KIND[kind] || "🍽️", category: cat, distance: DIST[town] || town,
+    effort: null, season: null, blurb: known, details: "", maps_query: maps, sources: [src],
+  });
+  window.EXPLORE_DATA.push(...EAT.map(toEntry("eat")), ...SHOP.map(toEntry("shop")));
+})();
