@@ -50,6 +50,9 @@ let year = new Date().getFullYear();
 let selectedColor = PALETTE[0];
 let guideFilter = "all";
 let exploreFilter = "all";
+// login-free visitor guide (?guest=1) — short-circuits the whole auth flow
+const isGuest = new URLSearchParams(window.location.search).get("guest") === "1";
+let guestFilter = "all";
 
 const EXPLORE_CATS = {
   village: { label: "In & around Gratteri", emoji: "🏘️" },
@@ -209,6 +212,7 @@ $("auth-form").addEventListener("submit", async (e) => {
 $("btn-logout").addEventListener("click", () => db.auth.signOut());
 
 db.auth.onAuthStateChange((_event, s) => {
+  if (isGuest) return; // guest mode never enters the ambassador app
   session = s;
   if (!s) {
     appEntered = false;
@@ -483,6 +487,31 @@ $("btn-invite-wa").addEventListener("click", () => {
   window.open(`https://wa.me/?text=${encodeURIComponent(inviteText())}`, "_blank", "noopener");
 });
 
+// ---------- share the login-free guest guide ----------
+const guestLink = () => `${SITE_URL}?guest=1`;
+const guestText = () => `Here's the visitor guide to Gratteri 🌿 — things to do, what's on, and who's in town while you're here:\n${guestLink()}`;
+
+$("btn-guest-share").addEventListener("click", async () => {
+  const msg = $("guest-share-message");
+  if (navigator.share) {
+    try { await navigator.share({ title: "Gratteri Visitor Guide", text: guestText(), url: guestLink() }); return; }
+    catch { /* fall through to link box */ }
+  }
+  $("guest-link-box").classList.remove("hidden");
+  $("guest-link").value = guestLink();
+  $("guest-link").select();
+  setMsg(msg, "Copy this link and send it to your guests.", "ok");
+});
+$("btn-guest-wa").addEventListener("click", () => {
+  window.open(`https://wa.me/?text=${encodeURIComponent(guestText())}`, "_blank", "noopener");
+});
+$("btn-copy-guest").addEventListener("click", async () => {
+  const msg = $("guest-share-message");
+  try { await navigator.clipboard.writeText(guestLink()); setMsg(msg, "Link copied ✓", "ok"); }
+  catch { $("guest-link").value = guestLink(); $("guest-link").select(); setMsg(msg, "Select the link above and copy it.", "ok"); }
+  setTimeout(() => setMsg(msg, ""), 2500);
+});
+
 $("btn-copy-invite").addEventListener("click", async () => {
   const msg = $("invite-message");
   try { await navigator.clipboard.writeText(inviteLink()); setMsg(msg, "Link copied ✓", "ok"); }
@@ -710,7 +739,7 @@ function renderInTown() {
   let html = "";
   if (now.length) {
     html += `<div><strong>🏡 In Gratteri right now:</strong><div class="in-town-chips">` +
-      now.map((v) => `<span class="chip"><span class="dot" style="background:${esc(famColor(v.family_id))}"></span>${esc(famName(v.family_id))} <span class="muted">until ${esc(fmtDate(v.end_date))}</span></span>`).join("") +
+      now.map((v) => `<span class="chip"><span class="dot" style="background:${esc(famColor(v.family_id))}"></span>${esc(famName(v.family_id))}${v.hosting_guests ? " 👥" : ""} <span class="muted">until ${esc(fmtDate(v.end_date))}</span></span>`).join("") +
       `</div></div>`;
   }
   if (soon.length) {
@@ -1498,6 +1527,7 @@ handleInsertForm("visit-form", "visit-message", "visits",
     start_date: $("vf-start").value,
     end_date: $("vf-end").value,
     notes: $("vf-notes").value.trim() || null,
+    hosting_guests: $("vf-guests").checked,
   }),
   "Visit added to the calendar 🎉",
   () => $("vf-end").value < $("vf-start").value ? "The end date is before the start date." : null);
@@ -1596,9 +1626,124 @@ function renderMyVisits() {
   $("my-visits").innerHTML = mine.map((v) => `
     <li class="${v.end_date < today ? "past" : ""}">
       <span class="dates">${esc(fmtRange(v.start_date, v.end_date))}</span>
-      <span class="note">${esc(v.notes || "")}</span>
+      <span class="note">${v.hosting_guests ? "👥 " : ""}${esc(v.notes || "")}</span>
       <button class="btn-danger-link" data-visit-id="${v.id}" type="button">Remove</button>
     </li>`).join("") || `<li class="muted" style="border:none">No visits yet — add your first one above!</li>`;
+}
+
+// ============================================================
+//  Guest mode — a login-free visitor guide (?guest=1)
+//  Shows the static tour guide, the festa programme, and who's
+//  in town RIGHT NOW. No auth, no forward travel schedule.
+// ============================================================
+async function guestBoot() {
+  $("guest-screen").classList.remove("hidden");
+  renderGuestGuide();
+
+  // guest nav — swap between the three sections
+  document.querySelectorAll(".gnav").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const view = btn.dataset.guestview;
+      document.querySelectorAll(".gnav").forEach((b) => b.classList.toggle("active", b === btn));
+      $("gview-guide").classList.toggle("hidden", view !== "guide");
+      $("gview-whatson").classList.toggle("hidden", view !== "whatson");
+      $("gview-here").classList.toggle("hidden", view !== "here");
+    });
+  });
+
+  // guide filter chips (own state, no vote buttons)
+  $("gguide-filters").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-explorefilter]");
+    if (!btn) return;
+    guestFilter = btn.dataset.explorefilter;
+    renderGuestGuide();
+  });
+
+  // fetch the two live slices in parallel (anon role, narrow reads)
+  await Promise.all([renderGuestWhatson(), renderGuestHere()]);
+}
+
+function renderGuestGuide() {
+  const data = window.EXPLORE_DATA || [];
+  const counts = {};
+  data.forEach((e) => { counts[e.category] = (counts[e.category] || 0) + 1; });
+
+  $("gguide-filters").innerHTML =
+    `<button class="filter-chip ${guestFilter === "all" ? "active" : ""}" data-explorefilter="all" type="button">All (${data.length})</button>` +
+    Object.entries(EXPLORE_CATS).map(([key, c]) =>
+      `<button class="filter-chip ${guestFilter === key ? "active" : ""}" data-explorefilter="${key}" type="button">${c.emoji} ${c.label}${counts[key] ? ` (${counts[key]})` : ""}</button>`
+    ).join("");
+
+  const shown = data.filter((e) => guestFilter === "all" || e.category === guestFilter);
+
+  $("gguide-list").innerHTML = shown.map((e) => `
+    <div class="explore-card">
+      <div class="place-head">
+        <span class="place-emoji">${e.emoji}</span>
+        <div class="place-title">
+          <h3>${esc(e.name)}</h3>
+          <div class="explore-chips">
+            <span class="chip">📍 ${esc(e.distance)}</span>
+            ${e.effort ? `<span class="chip">${e.effort === "easy" ? "🟢" : e.effort === "moderate" ? "🟡" : "🔴"} ${esc(e.effort)}</span>` : ""}
+            ${e.season ? `<span class="chip">🗓 ${esc(e.season)}</span>` : ""}
+          </div>
+        </div>
+      </div>
+      <p class="place-desc"><strong>${esc(e.blurb)}</strong></p>
+      ${e.details ? `<details class="explore-more">
+        <summary>The full brief</summary>
+        <p>${esc(e.details)}</p>
+      </details>` : ""}
+      <div class="place-links">
+        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps_query)}" target="_blank" rel="noopener">📍 Maps</a>
+        ${(e.sources || []).length ? `<a href="${esc(e.sources[0])}" target="_blank" rel="noopener">ℹ️ Info</a>` : ""}
+      </div>
+    </div>`).join("") || `<p class="muted" style="text-align:center">Nothing in this category yet.</p>`;
+}
+
+async function renderGuestWhatson() {
+  const list = $("gwhatson-list");
+  const { data, error } = await db.from("events").select("*").order("event_date");
+  if (error) { list.innerHTML = `<p class="muted" style="text-align:center">Couldn't load the programme just now.</p>`; return; }
+  const today = todayStr();
+  const upcoming = (data || []).filter((ev) => ev.event_date >= today);
+  if (!upcoming.length) {
+    list.innerHTML = `<p class="muted" style="text-align:center">No upcoming events listed right now — check back soon.</p>`;
+    return;
+  }
+  // anon can't read families, so no host names — just the programme itself
+  list.innerHTML = upcoming.map((ev) => {
+    const [y, m, d] = ev.event_date.split("-").map(Number);
+    return `<div class="event-card">
+      <div class="event-date-badge"><span>${d}</span><small>${MONTHS[m - 1]} ${y}</small></div>
+      <div class="event-body">
+        <h3>${esc(ev.title)}</h3>
+        ${ev.description ? `<p>${linkify(ev.description)}</p>` : ""}
+        <a class="btn btn-ghost event-share" target="_blank" rel="noopener"
+          href="https://wa.me/?text=${encodeURIComponent(`📌 ${ev.title} — ${fmtDate(ev.event_date)} in Gratteri${ev.description ? "\n" + ev.description : ""}`)}">Share 💬</a>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function renderGuestHere() {
+  const list = $("ghere-list");
+  const { data, error } = await db.rpc("whos_in_town");
+  if (error) { list.innerHTML = `<p class="muted" style="text-align:center">Couldn't load who's in town just now.</p>`; return; }
+  const rows = data || [];
+  if (!rows.length) {
+    list.innerHTML = `<p class="muted" style="text-align:center">No ambassadors are in the village right now.</p>`;
+    return;
+  }
+  list.innerHTML =
+    `<p class="muted" style="text-align:center;margin-bottom:12px">${rows.length} ${rows.length === 1 ? "family is" : "families are"} in Gratteri now — say hello 👋</p>` +
+    `<div class="here-list">` +
+    rows.map((r) => `<span class="chip here-chip">
+        <span class="dot" style="background:${esc(r.color || "#999")}"></span>
+        ${esc(r.family_name)}${r.hosting_guests ? " 👥" : ""}
+        <span class="muted">until ${esc(fmtDate(r.until_date))}</span>
+      </span>`).join("") +
+    `</div>`;
 }
 
 // ---------- boot ----------
@@ -1606,7 +1751,9 @@ $("plf-category").innerHTML = Object.entries(CATEGORIES).map(([key, c]) =>
   `<option value="${key}">${c.emoji} ${c.label}</option>`).join("");
 renderExplore(); // static data — render once at load
 
-(async () => {
+if (isGuest) {
+  guestBoot().catch((err) => toast("Couldn't load the guide: " + (err.message || err)));
+} else (async () => {
   const { data } = await db.auth.getSession();
   const code = pendingInviteCode();
   if (!data.session) {

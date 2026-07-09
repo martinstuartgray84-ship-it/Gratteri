@@ -1014,3 +1014,26 @@ select {
   .event-actions { flex-direction: row; flex-wrap: wrap; align-items: center; }
   .chart-name { flex-basis: 110px; }
 }
+
+/* ---------- guest visitor guide (?guest=1) ---------- */
+.guest-note {
+  background: var(--sand);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.1rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+.here-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.here-chip { font-size: 0.9rem; }
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+.checkbox-label input { width: auto; margin: 0; }
