@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260708e">
+  <link rel="stylesheet" href="style.css?v=20260709a">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
 </head>
 <body>
@@ -69,11 +69,6 @@
           <small>Guest view</small>
         </div>
       </div>
-      <nav class="topbar-nav">
-        <button class="nav-btn gnav active" data-guestview="guide" type="button"><span class="nav-icon">🧭</span><span class="nav-label">Guide</span></button>
-        <button class="nav-btn gnav" data-guestview="whatson" type="button"><span class="nav-icon">📌</span><span class="nav-label">What's on</span></button>
-        <button class="nav-btn gnav" data-guestview="here" type="button"><span class="nav-icon">🏡</span><span class="nav-label">Who's here</span></button>
-      </nav>
       <a class="btn btn-ghost" href="?">Ambassador? Log in</a>
     </header>
     <main class="main">
@@ -94,8 +89,14 @@
         <div class="view-head"><h2>Who's in Gratteri now</h2></div>
         <div id="ghere-list"></div>
       </section>
+
+      <footer class="footer">Made with ❤️ for Gratteri · staying with an ambassador? Ask them for a full account.</footer>
     </main>
-    <footer class="footer">Made with ❤️ for Gratteri · staying with an ambassador? Ask them for a full account.</footer>
+    <nav class="topbar-nav">
+      <button class="nav-btn gnav active" data-guestview="guide" type="button"><span class="nav-icon">🧭</span><span class="nav-label">Guide</span></button>
+      <button class="nav-btn gnav" data-guestview="whatson" type="button"><span class="nav-icon">📌</span><span class="nav-label">What's on</span></button>
+      <button class="nav-btn gnav" data-guestview="here" type="button"><span class="nav-icon">🏡</span><span class="nav-label">Who's here</span></button>
+    </nav>
   </div>
 
   <!-- ============ MAIN APP ============ -->
@@ -108,16 +109,6 @@
           <small>Gratteri · Sicilia</small>
         </div>
       </div>
-      <nav class="topbar-nav">
-        <button class="nav-btn active" data-view="calendar" type="button"><span class="nav-icon">📅</span><span class="nav-label">Calendar</span></button>
-        <button class="nav-btn" data-view="stream" type="button"><span class="nav-icon">⚡</span><span class="nav-label">Stream</span></button>
-        <button class="nav-btn" data-view="families" type="button"><span class="nav-icon">🏘️</span><span class="nav-label">Families</span></button>
-        <button class="nav-btn" data-view="events" type="button"><span class="nav-icon">📌</span><span class="nav-label">Events</span></button>
-        <button class="nav-btn" data-view="guide" type="button"><span class="nav-icon">🌿</span><span class="nav-label">Guide</span></button>
-        <button class="nav-btn" data-view="gallery" type="button"><span class="nav-icon">🌅</span><span class="nav-label">Photos</span></button>
-        <button class="nav-btn" data-view="board" type="button"><span class="nav-icon">📝</span><span class="nav-label">Notes</span></button>
-        <button class="nav-btn" data-view="mine" type="button"><span class="nav-icon">👨‍👩‍👧‍👦</span><span class="nav-label">My family</span></button>
-      </nav>
       <button id="btn-logout" class="btn btn-ghost" type="button">Log out</button>
     </header>
 
@@ -366,9 +357,20 @@
           <span id="guest-share-message" class="form-message"></span>
         </div>
       </section>
+
+      <footer class="footer">Made with ❤️ for Gratteri · <span id="footer-stats"></span></footer>
     </main>
 
-    <footer class="footer">Made with ❤️ for Gratteri · <span id="footer-stats"></span></footer>
+    <nav class="topbar-nav">
+      <button class="nav-btn active" data-view="calendar" type="button"><span class="nav-icon">📅</span><span class="nav-label">Calendar</span></button>
+      <button class="nav-btn" data-view="stream" type="button"><span class="nav-icon">⚡</span><span class="nav-label">Stream</span></button>
+      <button class="nav-btn" data-view="families" type="button"><span class="nav-icon">🏘️</span><span class="nav-label">Families</span></button>
+      <button class="nav-btn" data-view="events" type="button"><span class="nav-icon">📌</span><span class="nav-label">Events</span></button>
+      <button class="nav-btn" data-view="guide" type="button"><span class="nav-icon">🌿</span><span class="nav-label">Guide</span></button>
+      <button class="nav-btn" data-view="gallery" type="button"><span class="nav-icon">🌅</span><span class="nav-label">Photos</span></button>
+      <button class="nav-btn" data-view="board" type="button"><span class="nav-icon">📝</span><span class="nav-label">Notes</span></button>
+      <button class="nav-btn" data-view="mine" type="button"><span class="nav-icon">👨‍👩‍👧‍👦</span><span class="nav-label">My family</span></button>
+    </nav>
   </div>
 
   <div id="unwrapped" class="unwrapped hidden"></div>
@@ -398,7 +400,7 @@
   <div id="toast" class="toast hidden"></div>
 
   <script src="vendor/supabase.js"></script>
-  <script src="guide-data.js?v=20260708e"></script>
-  <script src="app.js?v=20260708e"></script>
+  <script src="guide-data.js?v=20260709a"></script>
+  <script src="app.js?v=20260709a"></script>
 </body>
 </html>

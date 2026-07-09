@@ -345,6 +345,7 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
     ["calendar", "stream", "families", "events", "guide", "gallery", "board", "mine"].forEach((v) => {
       $("view-" + v).classList.toggle("hidden", v !== btn.dataset.view);
     });
+    document.querySelector("#app .main")?.scrollTo({ top: 0 }); // new tab starts at the top
     // pick up other families' additions, but not on rapid tab-flipping
     if (Date.now() - lastLoadAt > 5000) safeRefresh();
   });
@@ -1648,6 +1649,7 @@ async function guestBoot() {
       $("gview-guide").classList.toggle("hidden", view !== "guide");
       $("gview-whatson").classList.toggle("hidden", view !== "whatson");
       $("gview-here").classList.toggle("hidden", view !== "here");
+      document.querySelector("#guest-screen .main")?.scrollTo({ top: 0 });
     });
   });
 
