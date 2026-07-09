@@ -975,6 +975,26 @@ select {
 /* ---------- Footer & toast ---------- */
 .footer { text-align: center; color: var(--ink-soft); font-size: 0.8rem; padding: 1.5rem 1rem 2.5rem; }
 
+/* respectful nod to the local cultural project */
+.partner-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 1.6rem;
+  padding: 1rem 1.2rem;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.partner-card:hover { box-shadow: 0 6px 18px rgba(51, 48, 43, 0.09); transform: translateY(-1px); }
+.partner-emblem { font-size: 1.7rem; line-height: 1; }
+.partner-text { display: flex; flex-direction: column; gap: 0.15rem; }
+.partner-text strong { font-family: var(--font-display); font-size: 1rem; color: var(--terracotta); }
+.partner-text small { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.45; }
+
 .toast {
   position: fixed;
   bottom: 1.5rem;
