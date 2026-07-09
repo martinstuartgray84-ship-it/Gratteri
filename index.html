@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260708d">
+  <link rel="stylesheet" href="style.css?v=20260709e">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
 </head>
 <body>
@@ -59,6 +59,53 @@
     <p class="auth-footer">A little corner of the internet for the foreign households of Gratteri 🇮🇹</p>
   </div>
 
+  <!-- ============ GUEST VIEW (no login) ============ -->
+  <div id="guest-screen" class="app hidden">
+    <header class="topbar">
+      <div class="topbar-brand">
+        <span class="topbar-emblem">🌿</span>
+        <div>
+          <strong>Gratteri — Visitor Guide</strong>
+          <small>Guest view</small>
+        </div>
+      </div>
+      <a class="btn btn-ghost" href="?">Ambassador? Log in</a>
+    </header>
+    <main class="main">
+      <div class="guest-note">👋 Welcome to Gratteri! This is the public visitor guide — the best things to do nearby, what's on in the village, and who's in town this week. Enjoy your stay 🌿</div>
+
+      <section id="gview-guide" class="view">
+        <a class="partner-card" href="https://grattalucisidiventa.it/home" target="_blank" rel="noopener">
+          <img class="partner-logo" src="icons/grattaluci-logo.jpg?v=20260709e" alt="Grattaluci si diventa — the concierge of Gratteri" width="52" height="52">
+          <span class="partner-text">
+            <strong>Grattaluci si diventa</strong>
+            <small>A cultural project from Gratteri — its stories, language and <em>Conversazioni Italiane</em>. Visit their site ↗</small>
+          </span>
+        </a>
+        <div class="view-head"><h2>Things to do</h2><span class="muted">Researched picks around Gratteri</span></div>
+        <div id="gguide-filters" class="guide-filters"></div>
+        <div id="gguide-list" class="places-list"></div>
+      </section>
+
+      <section id="gview-whatson" class="view hidden">
+        <div class="view-head"><h2>What's on</h2><span class="muted">Estate Gratterese programme</span></div>
+        <div id="gwhatson-list" class="events-list"></div>
+      </section>
+
+      <section id="gview-here" class="view hidden">
+        <div class="view-head"><h2>Who's in Gratteri now</h2></div>
+        <div id="ghere-list"></div>
+      </section>
+
+      <footer class="footer">Made with ❤️ for Gratteri · staying with an ambassador? Ask them for a full account.</footer>
+    </main>
+    <nav class="topbar-nav">
+      <button class="nav-btn gnav active" data-guestview="guide" type="button"><span class="nav-icon">🧭</span><span class="nav-label">Guide</span></button>
+      <button class="nav-btn gnav" data-guestview="whatson" type="button"><span class="nav-icon">📌</span><span class="nav-label">What's on</span></button>
+      <button class="nav-btn gnav" data-guestview="here" type="button"><span class="nav-icon">🏡</span><span class="nav-label">Who's here</span></button>
+    </nav>
+  </div>
+
   <!-- ============ MAIN APP ============ -->
   <div id="app" class="app hidden">
     <header class="topbar">
@@ -69,16 +116,6 @@
           <small>Gratteri · Sicilia</small>
         </div>
       </div>
-      <nav class="topbar-nav">
-        <button class="nav-btn active" data-view="calendar" type="button"><span class="nav-icon">📅</span><span class="nav-label">Calendar</span></button>
-        <button class="nav-btn" data-view="stream" type="button"><span class="nav-icon">⚡</span><span class="nav-label">Stream</span></button>
-        <button class="nav-btn" data-view="families" type="button"><span class="nav-icon">🏘️</span><span class="nav-label">Families</span></button>
-        <button class="nav-btn" data-view="events" type="button"><span class="nav-icon">📌</span><span class="nav-label">Events</span></button>
-        <button class="nav-btn" data-view="guide" type="button"><span class="nav-icon">🌿</span><span class="nav-label">Guide</span></button>
-        <button class="nav-btn" data-view="gallery" type="button"><span class="nav-icon">🌅</span><span class="nav-label">Photos</span></button>
-        <button class="nav-btn" data-view="board" type="button"><span class="nav-icon">📝</span><span class="nav-label">Notes</span></button>
-        <button class="nav-btn" data-view="mine" type="button"><span class="nav-icon">👨‍👩‍👧‍👦</span><span class="nav-label">My family</span></button>
-      </nav>
       <button id="btn-logout" class="btn btn-ghost" type="button">Log out</button>
     </header>
 
@@ -86,6 +123,14 @@
 
       <!-- ===== Calendar view ===== -->
       <section id="view-calendar" class="view">
+        <a class="partner-card" href="https://grattalucisidiventa.it/home" target="_blank" rel="noopener">
+          <img class="partner-logo" src="icons/grattaluci-logo.jpg?v=20260709e" alt="Grattaluci si diventa — the concierge of Gratteri" width="52" height="52">
+          <span class="partner-text">
+            <strong>Grattaluci si diventa</strong>
+            <small>A cultural project from Gratteri — its stories, language and <em>Conversazioni Italiane</em>. Visit their site ↗</small>
+          </span>
+        </a>
+
         <div id="checkin-bar" class="checkin-bar"></div>
         <div id="in-town-panel" class="in-town-panel hidden"></div>
         <div id="overlap-panel" class="in-town-panel overlap-panel hidden"></div>
@@ -278,6 +323,9 @@
             <label class="visit-note-label">Note <span class="muted">(optional)</span>
               <input type="text" id="vf-notes" maxlength="500" placeholder="e.g. Summer holiday, bringing friends!">
             </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="vf-guests"> 👥 We'll have guests staying
+            </label>
             <button type="submit" class="btn btn-primary">Add visit</button>
           </form>
           <span id="visit-message" class="form-message"></span>
@@ -309,10 +357,35 @@
             <span id="join-message" class="form-message"></span>
           </details>
         </div>
+
+        <div class="panel">
+          <h3>Have friends staying?</h3>
+          <p class="muted">Send guests this link — it opens a login-free visitor guide (things to do, what's on, who's in town), without your family's private details.</p>
+          <div class="invite-row">
+            <button id="btn-guest-share" class="btn btn-primary" type="button">🎁 Share the visitor guide</button>
+            <button id="btn-guest-wa" class="btn btn-ghost" type="button">Share on WhatsApp 💬</button>
+          </div>
+          <div id="guest-link-box" class="invite-link-box hidden">
+            <input type="text" id="guest-link" readonly>
+            <button id="btn-copy-guest" class="btn btn-ghost" type="button">Copy</button>
+          </div>
+          <span id="guest-share-message" class="form-message"></span>
+        </div>
       </section>
+
+      <footer class="footer">Made with ❤️ for Gratteri · <span id="footer-stats"></span></footer>
     </main>
 
-    <footer class="footer">Made with ❤️ for Gratteri · <span id="footer-stats"></span></footer>
+    <nav class="topbar-nav">
+      <button class="nav-btn active" data-view="calendar" type="button"><span class="nav-icon">📅</span><span class="nav-label">Calendar</span></button>
+      <button class="nav-btn" data-view="stream" type="button"><span class="nav-icon">⚡</span><span class="nav-label">Stream</span></button>
+      <button class="nav-btn" data-view="families" type="button"><span class="nav-icon">🏘️</span><span class="nav-label">Families</span></button>
+      <button class="nav-btn" data-view="events" type="button"><span class="nav-icon">📌</span><span class="nav-label">Events</span></button>
+      <button class="nav-btn" data-view="guide" type="button"><span class="nav-icon">🌿</span><span class="nav-label">Guide</span></button>
+      <button class="nav-btn" data-view="gallery" type="button"><span class="nav-icon">🌅</span><span class="nav-label">Photos</span></button>
+      <button class="nav-btn" data-view="board" type="button"><span class="nav-icon">📝</span><span class="nav-label">Notes</span></button>
+      <button class="nav-btn" data-view="mine" type="button"><span class="nav-icon">👨‍👩‍👧‍👦</span><span class="nav-label">My family</span></button>
+    </nav>
   </div>
 
   <div id="unwrapped" class="unwrapped hidden"></div>
@@ -342,7 +415,7 @@
   <div id="toast" class="toast hidden"></div>
 
   <script src="vendor/supabase.js"></script>
-  <script src="guide-data.js?v=20260708d"></script>
-  <script src="app.js?v=20260708d"></script>
+  <script src="guide-data.js?v=20260709e"></script>
+  <script src="app.js?v=20260709e"></script>
 </body>
 </html>
