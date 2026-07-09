@@ -166,9 +166,15 @@ input:focus, textarea:focus { outline: 2px solid var(--terracotta); outline-offs
 .app > .main {
   flex: 1 1 auto;
   min-height: 0;                 /* let the flex child shrink so it can scroll */
+  min-width: 0;                  /* and shrink horizontally, so wide content (the chart) scrolls instead of stretching the column */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+/* Centre the content column here, not on .main itself: putting margin:auto on
+   the flex child would cancel its stretch and let the wide calendar balloon the
+   whole column past the viewport. The children are plain blocks, so they simply
+   fill the width up to the max and centre — no overflow. */
+.app > .main > * { max-width: 1080px; margin-left: auto; margin-right: auto; }
 .app > .topbar-nav { flex: 0 0 auto; }
 
 /* ---------- Top bar ---------- */
@@ -211,7 +217,7 @@ input:focus, textarea:focus { outline: 2px solid var(--terracotta); outline-offs
 .nav-icon { display: none; }
 
 /* ---------- Layout ---------- */
-.main { max-width: 1080px; margin: 0 auto; padding: 1.5rem 1.2rem 3rem; }
+.main { padding: 1.5rem 1.2rem 3rem; }
 .view-head {
   display: flex;
   align-items: baseline;
@@ -990,7 +996,14 @@ select {
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 .partner-card:hover { box-shadow: 0 6px 18px rgba(51, 48, 43, 0.09); transform: translateY(-1px); }
-.partner-emblem { font-size: 1.7rem; line-height: 1; }
+.partner-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;      /* clips the white corners so it reads as a round emblem */
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #fff;
+}
 .partner-text { display: flex; flex-direction: column; gap: 0.15rem; }
 .partner-text strong { font-family: var(--font-display); font-size: 1rem; color: var(--terracotta); }
 .partner-text small { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.45; }
