@@ -818,9 +818,10 @@ function renderChart() {
   if (yearEvents.length) {
     const perDate = {};
     const markers = yearEvents.map((ev) => {
-      // stagger same-day markers vertically so each stays hoverable
+      // stagger same-day markers vertically so each stays separately tappable
+      // (14px clears the ~20px rotated diamonds, so no marker covers another's centre)
       const n = perDate[ev.event_date] = (perDate[ev.event_date] || 0) + 1;
-      const offset = [0, -10, 10][(n - 1) % 3];
+      const offset = [0, -14, 14][(n - 1) % 3];
       return `<div class="event-marker" style="left:${(dayOfYear(ev.event_date) / days) * 100}%;margin-top:${offset - 7}px" data-ref="event:${ev.id}"></div>`;
     }).join("");
     html += `<div class="chart-row chart-events-row">

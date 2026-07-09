@@ -372,6 +372,7 @@ input:focus, textarea:focus { outline: 2px solid var(--terracotta); outline-offs
 
 /* ---------- Events ---------- */
 .chart-events-row { background: #FBF7EE; }
+.chart-events-row .chart-timeline { min-height: 44px; }  /* room for staggered same-day markers */
 .chart-events-row .chart-name { background: #FBF7EE; }
 .chart-events-row .chart-name { color: var(--ink-soft); font-size: 0.78rem; }
 .event-marker {
