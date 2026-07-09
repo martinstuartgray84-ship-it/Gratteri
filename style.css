@@ -980,7 +980,7 @@ select {
   display: flex;
   align-items: center;
   gap: 0.9rem;
-  margin-top: 1.6rem;
+  margin-bottom: 1.1rem;
   padding: 1rem 1.2rem;
   background: var(--white);
   border: 1px solid var(--line);
