@@ -1047,12 +1047,12 @@ function renderGuide() {
       const mine = myFamily && p.family_id === myFamily.id;
       const iHeart = myFamily && hearts.some((h) => h.family_id === myFamily.id);
       const tips = placeTips.filter((t) => t.place_id === p.id);
-      return `<div class="place-card">
+      return `<div class="place-card" id="place-${p.id}">
         <div class="place-head">
           <span class="place-emoji">${cat.emoji}</span>
           <div class="place-title">
             <h3>${esc(p.name)}</h3>
-            <span class="muted">${esc(cat.label)}${by ? ` · added by ${esc(by.family_name)}` : ""}</span>
+            <span class="muted">${esc(cat.label)}${by ? ` · started by ${esc(by.family_name)}` : ""}</span>
           </div>
           <button class="heart-btn ${iHeart ? "hearted" : ""}" data-heart-place="${p.id}" data-hearted="${iHeart}" type="button"
             title="${iHeart ? "We rate this — click to undo" : "We rate this!"}">❤️ ${hearts.length}</button>
@@ -1064,12 +1064,30 @@ function renderGuide() {
           ${mine ? `<button class="btn-danger-link" data-place-id="${p.id}" type="button">Remove</button>` : ""}
         </div>
         <div class="place-tips">
-          ${tips.map((t) => {
+          ${tips.filter((t) => !t.parent_tip_id).map((t) => {
             const tMine = myFamily && t.family_id === myFamily.id;
+            const replies = tips.filter((r) => r.parent_tip_id === t.id);
             return `<div class="place-tip">
               <span class="dot" style="background:${esc(famColor(t.family_id))}"></span>
               <span><strong>${esc(famName(t.family_id))}:</strong> ${linkify(t.body)}</span>
               ${tMine ? `<button class="btn-danger-link" data-tip-id="${t.id}" type="button">×</button>` : ""}
+              <div class="tip-replies">
+                ${replies.map((r) => {
+                  const rMine = myFamily && r.family_id === myFamily.id;
+                  return `<div class="place-tip reply">
+                    <span class="dot" style="background:${esc(famColor(r.family_id))}"></span>
+                    <span><strong>${esc(famName(r.family_id))}:</strong> ${linkify(r.body)}</span>
+                    ${rMine ? `<button class="btn-danger-link" data-tip-id="${r.id}" type="button">×</button>` : ""}
+                  </div>`;
+                }).join("")}
+                <details class="tip-reply">
+                  <summary>＋ add to this</summary>
+                  <form class="tip-form" data-tip-place="${p.id}" data-tip-parent="${t.id}" data-key="reply-${t.id}">
+                    <input type="text" maxlength="1000" placeholder="Add more info…" required>
+                    <button type="submit" class="btn btn-ghost">Reply</button>
+                  </form>
+                </details>
+              </div>
             </div>`;
           }).join("")}
           <form class="tip-form" data-tip-place="${p.id}" data-key="tip-${p.id}">
@@ -1497,7 +1515,7 @@ document.addEventListener("submit", async (e) => {
   if (!body) return;
   const { table, row } = form.dataset.commentEvent
     ? { table: "event_comments", row: { event_id: form.dataset.commentEvent, family_id: myFamily.id, body } }
-    : { table: "place_tips", row: { place_id: form.dataset.tipPlace, family_id: myFamily.id, body } };
+    : { table: "place_tips", row: { place_id: form.dataset.tipPlace, family_id: myFamily.id, body, parent_tip_id: form.dataset.tipParent || null } };
   const { error } = await db.from(table).insert(row);
   if (error) { toast(error.message); return; }
   input.value = "";
@@ -1543,16 +1561,56 @@ handleInsertForm("event-form", "event-message", "events",
   }),
   "Event added 📌");
 
-handleInsertForm("place-form", "place-message", "places",
-  () => ({
-    family_id: myFamily.id,
-    name: $("plf-name").value.trim(),
-    category: $("plf-category").value,
-    description: $("plf-desc").value.trim() || null,
-    maps_url: $("plf-maps").value.trim() || null,
-    phone: $("plf-phone").value.trim() || null,
-  }),
-  "Added to the guide 🌿");
+// Adding to the guide is collaborative: if the place is already listed (any
+// family added it), we fold the new details into that one entry as a tip
+// rather than letting a second, duplicate card appear.
+const normName = (s) => s.toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+$("place-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = $("place-message");
+  if (!myFamily) { setMsg(msg, "Your profile hasn't loaded yet — try again in a moment.", "error"); return; }
+  const name = $("plf-name").value.trim();
+  const category = $("plf-category").value;
+  const description = $("plf-desc").value.trim();
+  const maps_url = $("plf-maps").value.trim();
+  const phone = $("plf-phone").value.trim();
+  if (!name) { setMsg(msg, "Give it a name first.", "error"); return; }
+
+  const existing = name && places.find((p) => normName(p.name) === normName(name));
+  if (existing) {
+    const addHere = confirm(`“${existing.name}” is already in the guide.\n\nAdd your info to that entry instead of creating a duplicate?\n\n(OK = add to it · Cancel = list it separately)`);
+    if (addHere) {
+      const contribution = [description, phone ? `📞 ${phone}` : "", maps_url ? `📍 ${maps_url}` : ""].filter(Boolean).join(" · ");
+      if (!contribution) {
+        setMsg(msg, `“${existing.name}” is already in the guide — open its card below to add a tip.`, "ok");
+        guideFilter = "all"; renderGuide();
+        setTimeout(() => $("place-" + existing.id)?.scrollIntoView({ block: "center", behavior: "smooth" }), 80);
+        return;
+      }
+      const { error } = await db.from("place_tips").insert({ place_id: existing.id, family_id: myFamily.id, body: contribution });
+      if (error) { setMsg(msg, error.message, "error"); return; }
+      $("place-form").reset();
+      setMsg(msg, "");
+      toast(`Added your note to “${existing.name}” 🌿`);
+      guideFilter = "all";
+      await safeRefresh();
+      setTimeout(() => $("place-" + existing.id)?.scrollIntoView({ block: "center", behavior: "smooth" }), 120);
+      return;
+    }
+    // Cancelled: they meant a genuinely different place with the same name — carry on and create it.
+  }
+
+  const { error } = await db.from("places").insert({
+    family_id: myFamily.id, name, category,
+    description: description || null, maps_url: maps_url || null, phone: phone || null,
+  });
+  if (error) { setMsg(msg, error.message, "error"); return; }
+  $("place-form").reset();
+  setMsg(msg, "");
+  toast("Added to the guide 🌿");
+  await safeRefresh();
+});
 
 handleInsertForm("board-form", "board-message", "messages",
   () => ({ family_id: myFamily.id, body: $("board-body").value.trim() }),
