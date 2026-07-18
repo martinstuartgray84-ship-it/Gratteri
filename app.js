@@ -1064,12 +1064,30 @@ function renderGuide() {
           ${mine ? `<button class="btn-danger-link" data-place-id="${p.id}" type="button">Remove</button>` : ""}
         </div>
         <div class="place-tips">
-          ${tips.map((t) => {
+          ${tips.filter((t) => !t.parent_tip_id).map((t) => {
             const tMine = myFamily && t.family_id === myFamily.id;
+            const replies = tips.filter((r) => r.parent_tip_id === t.id);
             return `<div class="place-tip">
               <span class="dot" style="background:${esc(famColor(t.family_id))}"></span>
               <span><strong>${esc(famName(t.family_id))}:</strong> ${linkify(t.body)}</span>
               ${tMine ? `<button class="btn-danger-link" data-tip-id="${t.id}" type="button">×</button>` : ""}
+              <div class="tip-replies">
+                ${replies.map((r) => {
+                  const rMine = myFamily && r.family_id === myFamily.id;
+                  return `<div class="place-tip reply">
+                    <span class="dot" style="background:${esc(famColor(r.family_id))}"></span>
+                    <span><strong>${esc(famName(r.family_id))}:</strong> ${linkify(r.body)}</span>
+                    ${rMine ? `<button class="btn-danger-link" data-tip-id="${r.id}" type="button">×</button>` : ""}
+                  </div>`;
+                }).join("")}
+                <details class="tip-reply">
+                  <summary>＋ add to this</summary>
+                  <form class="tip-form" data-tip-place="${p.id}" data-tip-parent="${t.id}" data-key="reply-${t.id}">
+                    <input type="text" maxlength="1000" placeholder="Add more info…" required>
+                    <button type="submit" class="btn btn-ghost">Reply</button>
+                  </form>
+                </details>
+              </div>
             </div>`;
           }).join("")}
           <form class="tip-form" data-tip-place="${p.id}" data-key="tip-${p.id}">
@@ -1497,7 +1515,7 @@ document.addEventListener("submit", async (e) => {
   if (!body) return;
   const { table, row } = form.dataset.commentEvent
     ? { table: "event_comments", row: { event_id: form.dataset.commentEvent, family_id: myFamily.id, body } }
-    : { table: "place_tips", row: { place_id: form.dataset.tipPlace, family_id: myFamily.id, body } };
+    : { table: "place_tips", row: { place_id: form.dataset.tipPlace, family_id: myFamily.id, body, parent_tip_id: form.dataset.tipParent || null } };
   const { error } = await db.from(table).insert(row);
   if (error) { toast(error.message); return; }
   input.value = "";
