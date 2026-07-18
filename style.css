@@ -715,6 +715,16 @@ select {
 .tip-form, .event-comment-form { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
 .tip-form input, .event-comment-form input { flex: 1; margin-top: 0; font-size: 0.86rem; padding: 0.45rem 0.65rem; }
 
+/* threaded replies: build on a tip rather than posting a parallel one */
+.place-tip { flex-wrap: wrap; }
+.tip-replies { flex-basis: 100%; margin: 0.1rem 0 0.2rem 0.9rem; padding-left: 0.6rem; border-left: 2px solid #EFE7D6; }
+.place-tip.reply { font-size: 0.82rem; }
+.tip-reply { margin-top: 0.15rem; }
+.tip-reply summary { display: inline-block; cursor: pointer; list-style: none; font-size: 0.78rem; font-weight: 600; color: var(--sea); padding: 0.15rem 0; }
+.tip-reply summary::-webkit-details-marker { display: none; }
+.tip-reply[open] summary { color: var(--ink-soft); }
+.tip-reply .tip-form { margin-top: 0.25rem; }
+
 /* ---------- Event comments & share ---------- */
 .event-comments { flex-basis: 100%; border-top: 1px solid #F0EADD; margin-top: 0.6rem; padding-top: 0.5rem; }
 .event-comment {
